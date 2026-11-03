@@ -2,95 +2,254 @@
 <component name="MainScene" extends="Scene">
     <script type="text/brightscript" uri="pkg:/components/Data.brs" />
     <script type="text/brightscript" uri="pkg:/components/MainScene.brs" />
+    <script type="text/brightscript" uri="pkg:/components/scene/Pick.brs" />
+    <script type="text/brightscript" uri="pkg:/components/scene/Screens.brs" />
     <children>
         <Rectangle id="bg" width="1920" height="1080" color="0x14141FFF" />
         <Rectangle id="accentBar" width="12" height="1080" color="0xFFC94DFF" />
 
-        <!-- Écran 1 : choix de la catégorie -->
+        <!-- ===================== Menu principal ===================== -->
         <Group id="menu">
-            <Label translation="[120, 70]" text="Qu'est-ce qu'on regarde ?" color="0xFFFFFFFF">
-                <Font role="font" uri="font:BoldSystemFontFile" size="68" />
+            <Label translation="[120, 60]" text="Qu'est-ce qu'on regarde ?" color="0xFFFFFFFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="68" />
             </Label>
-            <Label translation="[120, 160]" text="Choisis une catégorie, je tire un titre au hasard" color="0x9A9AB0FF">
-                <Font role="font" uri="font:SystemFontFile" size="34" />
+            <Label translation="[120, 150]" text="Choisis une catégorie, je tire un titre au hasard" color="0x9A9AB0FF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="34" />
             </Label>
             <LabelList
                 id="catList"
-                translation="[120, 250]"
-                itemSize="[1100, 82]"
-                itemSpacing="[0, 10]"
-                numRows="7"
+                translation="[120, 230]"
+                itemSize="[1080, 74]"
+                itemSpacing="[0, 8]"
+                numRows="8"
                 vertFocusAnimationStyle="floatingFocus"
                 color="0xDDDDEEFF"
                 focusedColor="0x14141FFF"
                 focusBitmapBlendColor="0xFFC94DFF">
-                <Font role="font" uri="font:SystemFontFile" size="42" />
-                <Font role="focusedFont" uri="font:BoldSystemFontFile" size="42" />
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="38" />
+                <Font role="focusedFont" uri="pkg:/fonts/Inter-Bold.ttf" size="38" />
             </LabelList>
-            <Label translation="[120, 905]" text="OK : tirage au hasard        Droite ou * : voir la liste / cocher les vus" color="0x9A9AB0FF">
-                <Font role="font" uri="font:SystemFontFile" size="30" />
+            <Rectangle translation="[1290, 230]" width="510" height="640" color="0x1F1F2EFF" />
+            <Label id="menuInfoTitle" translation="[1330, 260]" text="EN UN COUP D'OEIL" color="0xFFC94DFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="28" />
+            </Label>
+            <Label id="menuInfo" translation="[1330, 310]" width="440" height="540" wrap="true" lineSpacing="10" color="0xDDDDEEFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="30" />
+            </Label>
+            <Label translation="[120, 915]" text="OK : choisir        Droite ou * : voir la liste de la catégorie" color="0x9A9AB0FF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="28" />
             </Label>
         </Group>
 
-        <!-- Écran 2 : le résultat -->
+        <!-- ===================== Fiche / résultat ===================== -->
         <Group id="result" visible="false">
-            <Rectangle translation="[180, 150]" width="520" height="780" color="0x1F1F2EFF" />
-            <Label id="resPh" translation="[180, 150]" width="520" height="780" horizAlign="center" vertAlign="center" text="?" color="0xFFC94DFF">
-                <Font role="font" uri="font:BoldSystemFontFile" size="220" />
+            <Rectangle translation="[140, 120]" width="520" height="780" color="0x1F1F2EFF" />
+            <Label id="resPh" translation="[140, 120]" width="520" height="780" horizAlign="center" vertAlign="center" text="?" color="0xFFC94DFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="220" />
             </Label>
-            <Poster id="resPoster" translation="[180, 150]" width="520" height="780" loadWidth="520" loadHeight="780" loadDisplayMode="scaleToFit" />
-            <Label id="resCat" translation="[800, 300]" width="980" color="0xFFC94DFF">
-                <Font role="font" uri="font:BoldSystemFontFile" size="40" />
-            </Label>
-            <Label id="resTitle" translation="[800, 360]" width="980" height="380" vertAlign="center" wrap="true" maxLines="3" color="0xFFFFFFFF">
-                <Font role="font" uri="font:BoldSystemFontFile" size="84" />
-            </Label>
-            <Label id="resHint" translation="[800, 790]" width="980" wrap="true" color="0x9A9AB0FF">
-                <Font role="font" uri="font:SystemFontFile" size="32" />
+            <Poster id="resPoster" translation="[140, 120]" width="520" height="780" loadWidth="520" loadHeight="780" loadDisplayMode="scaleToFit" />
+            <LayoutGroup id="resText" translation="[720, 120]" layoutDirection="vert" itemSpacings="[6, 22, 14, 18]">
+                <Label id="resCat" width="1080" color="0xFFC94DFF">
+                    <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="34" />
+                </Label>
+                <Label id="resTitle" width="1080" wrap="true" maxLines="2" color="0xFFFFFFFF">
+                    <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="72" />
+                </Label>
+                <Label id="resMeta" width="1080" wrap="true" maxLines="2" color="0x9A9AB0FF">
+                    <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="30" />
+                </Label>
+                <Label id="resMine" width="1080" color="0x7CFFA0FF">
+                    <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="30" />
+                </Label>
+                <Label id="resSyn" width="1080" wrap="true" maxLines="6" lineSpacing="4" color="0xCFCFE0FF">
+                    <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="28" />
+                </Label>
+            </LayoutGroup>
+            <Group id="btnRow" translation="[720, 820]">
+                <Group translation="[0, 0]">
+                    <Rectangle id="btnR0" width="255" height="72" color="0x2C2C44FF" />
+                    <Label id="btnL0" width="255" height="72" horizAlign="center" vertAlign="center"><Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="27" /></Label>
+                </Group>
+                <Group translation="[275, 0]">
+                    <Rectangle id="btnR1" width="255" height="72" color="0x2C2C44FF" />
+                    <Label id="btnL1" width="255" height="72" horizAlign="center" vertAlign="center"><Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="27" /></Label>
+                </Group>
+                <Group translation="[550, 0]">
+                    <Rectangle id="btnR2" width="255" height="72" color="0x2C2C44FF" />
+                    <Label id="btnL2" width="255" height="72" horizAlign="center" vertAlign="center"><Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="27" /></Label>
+                </Group>
+                <Group translation="[825, 0]">
+                    <Rectangle id="btnR3" width="255" height="72" color="0x2C2C44FF" />
+                    <Label id="btnL3" width="255" height="72" horizAlign="center" vertAlign="center"><Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="27" /></Label>
+                </Group>
+            </Group>
+            <Label id="resHint" translation="[720, 915]" width="1080" color="0x9A9AB0FF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="26" />
             </Label>
         </Group>
 
-        <!-- Écran 3 : la liste d'une catégorie, avec cases « vu » -->
-        <Group id="listView" visible="false">
-            <Label id="listTitle" translation="[120, 70]" color="0xFFFFFFFF">
-                <Font role="font" uri="font:BoldSystemFontFile" size="64" />
+        <!-- ===================== Mode 3 choix ===================== -->
+        <Group id="choices" visible="false">
+            <Label id="chTitle" translation="[120, 50]" text="Ce soir, ce sera..." color="0xFFFFFFFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="60" />
             </Label>
-            <Label id="listSub" translation="[120, 155]" width="1100" color="0x9A9AB0FF">
-                <Font role="font" uri="font:SystemFontFile" size="32" />
+            <Group translation="[200, 150]">
+                <Rectangle id="chHi0" translation="[-12, -12]" width="444" height="764" color="0xFFC94DFF" visible="false" />
+                <Rectangle width="420" height="630" color="0x1F1F2EFF" />
+                <Label id="chPh0" width="420" height="630" horizAlign="center" vertAlign="center" text="?" color="0x44445EFF"><Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="180" /></Label>
+                <Poster id="chPo0" width="420" height="630" loadWidth="420" loadHeight="630" loadDisplayMode="scaleToFit" />
+                <Rectangle translation="[0, 630]" width="420" height="110" color="0x1F1F2EFF" />
+                <Label id="chT0" translation="[12, 636]" width="396" height="98" wrap="true" maxLines="2" horizAlign="center" vertAlign="center" color="0xFFFFFFFF"><Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="30" /></Label>
+            </Group>
+            <Group translation="[750, 150]">
+                <Rectangle id="chHi1" translation="[-12, -12]" width="444" height="764" color="0xFFC94DFF" visible="false" />
+                <Rectangle width="420" height="630" color="0x1F1F2EFF" />
+                <Label id="chPh1" width="420" height="630" horizAlign="center" vertAlign="center" text="?" color="0x44445EFF"><Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="180" /></Label>
+                <Poster id="chPo1" width="420" height="630" loadWidth="420" loadHeight="630" loadDisplayMode="scaleToFit" />
+                <Rectangle translation="[0, 630]" width="420" height="110" color="0x1F1F2EFF" />
+                <Label id="chT1" translation="[12, 636]" width="396" height="98" wrap="true" maxLines="2" horizAlign="center" vertAlign="center" color="0xFFFFFFFF"><Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="30" /></Label>
+            </Group>
+            <Group translation="[1300, 150]">
+                <Rectangle id="chHi2" translation="[-12, -12]" width="444" height="764" color="0xFFC94DFF" visible="false" />
+                <Rectangle width="420" height="630" color="0x1F1F2EFF" />
+                <Label id="chPh2" width="420" height="630" horizAlign="center" vertAlign="center" text="?" color="0x44445EFF"><Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="180" /></Label>
+                <Poster id="chPo2" width="420" height="630" loadWidth="420" loadHeight="630" loadDisplayMode="scaleToFit" />
+                <Rectangle translation="[0, 630]" width="420" height="110" color="0x1F1F2EFF" />
+                <Label id="chT2" translation="[12, 636]" width="396" height="98" wrap="true" maxLines="2" horizAlign="center" vertAlign="center" color="0xFFFFFFFF"><Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="30" /></Label>
+            </Group>
+            <Label id="chHint" translation="[120, 925]" text="Gauche / Droite : choisir     OK : voir la fiche     Lecture : relancer     Retour : menu" color="0x9A9AB0FF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="28" />
+            </Label>
+        </Group>
+
+        <!-- ===================== Liste d'une catégorie ===================== -->
+        <Group id="listView" visible="false">
+            <Label id="listTitle" translation="[120, 60]" color="0xFFFFFFFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="60" />
+            </Label>
+            <Label id="listSub" translation="[120, 145]" width="1150" color="0x9A9AB0FF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="30" />
             </Label>
             <CheckList
                 id="itemList"
-                translation="[120, 230]"
-                itemSize="[1050, 70]"
+                translation="[120, 210]"
+                itemSize="[1120, 66]"
                 itemSpacing="[0, 6]"
-                numRows="9"
+                numRows="10"
                 checkOnSelect="false"
                 vertFocusAnimationStyle="floatingFocus"
                 color="0xDDDDEEFF"
                 focusedColor="0x14141FFF"
                 focusBitmapBlendColor="0xFFC94DFF">
-                <Font role="font" uri="font:SystemFontFile" size="36" />
-                <Font role="focusedFont" uri="font:BoldSystemFontFile" size="36" />
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="34" />
+                <Font role="focusedFont" uri="pkg:/fonts/Inter-Bold.ttf" size="34" />
             </CheckList>
-            <Rectangle translation="[1340, 200]" width="440" height="660" color="0x1F1F2EFF" />
-            <Label translation="[1340, 200]" width="440" height="660" horizAlign="center" vertAlign="center" text="?" color="0x33334AFF">
-                <Font role="font" uri="font:BoldSystemFontFile" size="180" />
+            <Rectangle translation="[1340, 150]" width="440" height="660" color="0x1F1F2EFF" />
+            <Label translation="[1340, 150]" width="440" height="660" horizAlign="center" vertAlign="center" text="?" color="0x33334AFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="180" />
             </Label>
-            <Poster id="listPoster" translation="[1340, 200]" width="440" height="660" loadWidth="440" loadHeight="660" loadDisplayMode="scaleToFit" />
-            <Label translation="[120, 905]" text="OK : cocher / décocher « vu »        Retour : catégories" color="0x9A9AB0FF">
-                <Font role="font" uri="font:SystemFontFile" size="30" />
+            <Poster id="listPoster" translation="[1340, 150]" width="440" height="660" loadWidth="440" loadHeight="660" loadDisplayMode="scaleToFit" />
+            <Label id="listInfo" translation="[1340, 825]" width="440" height="130" wrap="true" maxLines="3" color="0xCFCFE0FF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="26" />
+            </Label>
+            <Label translation="[120, 925]" width="1180" text="OK : fiche     Lecture : vu / pas vu     * : changer le tri     Retour" color="0x9A9AB0FF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="28" />
             </Label>
         </Group>
 
-        <Label id="footer" translation="[120, 975]" color="0x7FD3FFFF">
-            <Font role="font" uri="font:SystemFontFile" size="32" />
+        <!-- ===================== Filtres / Paramètres ===================== -->
+        <Group id="optView" visible="false">
+            <Label id="optTitle" translation="[120, 60]" color="0xFFFFFFFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="60" />
+            </Label>
+            <Label id="optSub" translation="[120, 145]" width="1680" color="0x9A9AB0FF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="30" />
+            </Label>
+            <LabelList
+                id="optList"
+                translation="[120, 220]"
+                itemSize="[1400, 70]"
+                itemSpacing="[0, 8]"
+                numRows="9"
+                vertFocusAnimationStyle="floatingFocus"
+                color="0xDDDDEEFF"
+                focusedColor="0x14141FFF"
+                focusBitmapBlendColor="0xFFC94DFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="36" />
+                <Font role="focusedFont" uri="pkg:/fonts/Inter-Bold.ttf" size="36" />
+            </LabelList>
+            <Label translation="[120, 925]" text="OK ou Droite : valeur suivante     Gauche : valeur précédente     Retour : menu" color="0x9A9AB0FF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="28" />
+            </Label>
+        </Group>
+
+        <!-- ===================== Historique ===================== -->
+        <Group id="histView" visible="false">
+            <Label translation="[120, 60]" text="Historique des tirages" color="0xFFFFFFFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="60" />
+            </Label>
+            <Label id="histSub" translation="[120, 145]" width="1680" color="0x9A9AB0FF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="30" />
+            </Label>
+            <LabelList
+                id="histList"
+                translation="[120, 220]"
+                itemSize="[1680, 64]"
+                itemSpacing="[0, 6]"
+                numRows="10"
+                vertFocusAnimationStyle="floatingFocus"
+                color="0xDDDDEEFF"
+                focusedColor="0x14141FFF"
+                focusBitmapBlendColor="0xFFC94DFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="34" />
+                <Font role="focusedFont" uri="pkg:/fonts/Inter-Bold.ttf" size="34" />
+            </LabelList>
+            <Label translation="[120, 925]" text="OK : voir la fiche     Retour : menu" color="0x9A9AB0FF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="28" />
+            </Label>
+        </Group>
+
+        <!-- ===================== Statistiques ===================== -->
+        <Group id="statsView" visible="false">
+            <Label translation="[120, 60]" text="Statistiques" color="0xFFFFFFFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="60" />
+            </Label>
+            <Label id="statsLeft" translation="[120, 170]" width="800" height="720" wrap="true" lineSpacing="12" color="0xDDDDEEFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="34" />
+            </Label>
+            <Label id="statsRight" translation="[1000, 170]" width="800" height="720" wrap="true" lineSpacing="12" color="0xDDDDEEFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="34" />
+            </Label>
+            <Label translation="[120, 925]" text="Retour : menu" color="0x9A9AB0FF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="28" />
+            </Label>
+        </Group>
+
+        <!-- ===================== Qui choisit ce soir ? ===================== -->
+        <Group id="playersView" visible="false">
+            <Label translation="[120, 60]" width="1680" horizAlign="center" text="Qui choisit ce soir ?" color="0xFFFFFFFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="64" />
+            </Label>
+            <Label id="playerName" translation="[120, 300]" width="1680" height="300" horizAlign="center" vertAlign="center" wrap="true" color="0xFFC94DFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="140" />
+            </Label>
+            <Label id="playerHint" translation="[120, 700]" width="1680" horizAlign="center" wrap="true" color="0x9A9AB0FF">
+                <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="34" />
+            </Label>
+        </Group>
+
+        <Label id="footer" translation="[120, 990]" color="0x7FD3FFFF">
+            <Font role="font" uri="pkg:/fonts/Inter-Regular.ttf" size="28" />
         </Label>
-        <Label id="toast" translation="[1000, 975]" width="800" horizAlign="right" color="0x7CFFA0FF" visible="false">
-            <Font role="font" uri="font:BoldSystemFontFile" size="32" />
+        <Label id="toast" translation="[1000, 990]" width="800" horizAlign="right" color="0x7CFFA0FF" visible="false">
+            <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="28" />
         </Label>
 
-        <Timer id="rollTimer" duration="0.07" repeat="true" />
+        <Timer id="rollTimer" duration="0.07" repeat="false" />
         <Timer id="toastTimer" duration="3" repeat="false" />
+        <Timer id="focusTimer" duration="0.35" repeat="false" />
+        <SoundEffect id="sndTick" uri="pkg:/sounds/tick.wav" />
+        <SoundEffect id="sndDing" uri="pkg:/sounds/ding.wav" />
         <WebServerTask id="server" />
     </children>
 </component>

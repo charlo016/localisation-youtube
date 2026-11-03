@@ -3,68 +3,127 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#14141f">
 <title>Film au Hasard</title>
 <style>
-  :root { --bg:#14141f; --card:#1f1f2e; --line:#33334a; --text:#eeeef6; --dim:#9a9ab0; --accent:#ffc94d; --ok:#7cffa0; --err:#ff7c7c; }
+  :root { --bg:#14141f; --card:#1f1f2e; --card2:#17172a; --line:#33334a; --text:#eeeef6; --dim:#9a9ab0; --accent:#ffc94d; --ok:#7cffa0; --err:#ff7c7c; --fav:#ff6fb5; }
   * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; }
   body { margin:0; background:var(--bg); color:var(--text); font:16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  .wrap { max-width:1000px; margin:auto; padding:0 16px; }
-  header { padding:18px 0 0; }
-  h1 { margin:0; font-size:24px; }
-  .tabs { display:flex; gap:6px; margin:14px 0 16px; border-bottom:1px solid var(--line); }
-  .tabs button { background:none; border-radius:8px 8px 0 0; padding:10px 16px; color:var(--dim); font-weight:600; border-bottom:3px solid transparent; }
+  .wrap { max-width:1040px; margin:auto; padding:0 16px; }
+  header { padding:16px 0 0; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  h1 { margin:0; font-size:23px; }
+  h2 { font-size:18px; margin:22px 0 10px; }
+  .ver { color:var(--dim); font-size:13px; }
+  .tabs { display:flex; gap:2px; margin:12px 0 16px; border-bottom:1px solid var(--line); overflow-x:auto; scrollbar-width:none; }
+  .tabs button { background:none; border-radius:8px 8px 0 0; padding:10px 14px; color:var(--dim); font-weight:600; border-bottom:3px solid transparent; white-space:nowrap; }
   .tabs button.on { color:var(--text); border-bottom-color:var(--accent); }
   button { font:inherit; border:0; border-radius:8px; padding:9px 14px; cursor:pointer; background:#2c2c44; color:var(--text); }
   button:hover:not(:disabled) { filter:brightness(1.15); }
-  button:disabled { opacity:.55; cursor:default; }
+  button:disabled { opacity:.5; cursor:default; }
   .primary { background:var(--accent); color:#14141f; font-weight:700; }
   .danger { background:transparent; color:var(--err); border:1px solid #5a2c35; }
-  .icon { padding:7px 11px; }
-  input[type=text], input[type=search], select { font:inherit; background:#17172a; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:9px 11px; min-width:0; }
+  .ghost { background:transparent; border:1px solid var(--line); }
+  .icon { padding:7px 10px; min-width:36px; }
+  .small { padding:6px 10px; font-size:14px; }
+  input[type=text], input[type=search], select, textarea { font:inherit; background:var(--card2); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:9px 11px; min-width:0; }
+  textarea { width:100%; min-height:180px; resize:vertical; }
   .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .grow { flex:1; }
-  .seg { display:inline-flex; background:#17172a; border:1px solid var(--line); border-radius:10px; padding:3px; }
+  .seg { display:inline-flex; background:var(--card2); border:1px solid var(--line); border-radius:10px; padding:3px; }
   .seg button { background:none; padding:7px 14px; color:var(--dim); }
   .seg button.on { background:var(--accent); color:#14141f; font-weight:700; }
   .hint { color:var(--dim); font-size:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
   .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:14px; margin-top:16px; }
   .res { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }
-  .poster { aspect-ratio:2/3; width:100%; object-fit:cover; background:#26263a; display:block; }
-  .ph { aspect-ratio:2/3; display:grid; place-items:center; background:#26263a; color:#4a4a66; font-size:48px; font-weight:800; }
-  .res .info { padding:8px 10px; flex:1; display:flex; flex-direction:column; gap:6px; }
+  .poster { aspect-ratio:2/3; width:100%; object-fit:cover; background:#26263a; display:block; cursor:pointer; }
+  .ph { aspect-ratio:2/3; display:grid; place-items:center; background:#26263a; color:#4a4a66; font-size:48px; font-weight:800; cursor:pointer; }
+  .res .info { padding:8px 10px; flex:1; display:flex; flex-direction:column; gap:4px; }
   .res .t { font-weight:600; font-size:14px; }
-  .res .y { color:var(--dim); font-size:13px; }
+  .meta { color:var(--dim); font-size:13px; }
   .res button { margin-top:auto; padding:7px 10px; font-size:14px; }
-  .added { background:#1f3a2a !important; color:var(--ok); }
-  .cat { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:14px; }
-  .cat .name { flex:1; font-size:18px; font-weight:700; }
-  .cnt { color:var(--dim); font-size:13px; }
+  .added { background:#1f3a2a !important; color:var(--ok) !important; }
+  .chip { display:inline-block; font-size:12px; padding:2px 8px; border-radius:99px; background:#2c2c44; color:var(--dim); margin:2px 4px 0 0; }
+  /* Listes */
+  .toolbar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; align-items:center; }
+  .toolbar input[type=search] { flex:1 1 180px; }
+  .cat { margin-bottom:14px; }
+  .cat .name { flex:1 1 140px; font-size:18px; font-weight:700; }
+  .cnt { color:var(--dim); font-size:13px; white-space:nowrap; }
   .items { list-style:none; margin:10px 0; padding:0; display:grid; gap:6px; }
-  .item { display:flex; gap:10px; align-items:center; padding:6px; border-radius:8px; background:#17172a; }
-  .item img, .item .mini { width:36px; height:54px; border-radius:4px; object-fit:cover; background:#26263a; flex:none; }
-  .item .lbl { flex:1; min-width:0; overflow-wrap:anywhere; }
-  .item.seen .lbl { color:var(--dim); text-decoration:line-through; }
-  .item label { display:flex; gap:6px; align-items:center; color:var(--dim); font-size:14px; cursor:pointer; white-space:nowrap; }
-  .item input[type=checkbox] { width:20px; height:20px; accent-color:var(--accent); }
-  .bar { position:sticky; bottom:0; background:#101019ee; border-top:1px solid var(--line); padding:10px 0; margin-top:20px; }
+  .item { display:flex; gap:10px; align-items:center; padding:6px; border-radius:8px; background:var(--card2); }
+  .item .th { width:40px; height:60px; border-radius:4px; object-fit:cover; background:#26263a; flex:none; cursor:pointer; }
+  .item .lbl { flex:1; min-width:0; cursor:pointer; }
+  .item .lbl b { font-weight:600; overflow-wrap:anywhere; }
+  .item.seen .lbl b { color:var(--dim); text-decoration:line-through; }
+  .ctrls { display:flex; align-items:center; gap:4px; flex-wrap:wrap; justify-content:flex-end; }
+  .stars { display:inline-flex; }
+  .stars span { cursor:pointer; font-size:18px; color:#44445e; padding:0 1px; line-height:1; user-select:none; }
+  .stars span.on { color:var(--accent); }
+  .heart { background:none; padding:4px 6px; font-size:19px; color:#44445e; }
+  .heart.on { color:var(--fav); }
+  .vu { display:flex; gap:5px; align-items:center; color:var(--dim); font-size:14px; cursor:pointer; white-space:nowrap; padding:0 4px; }
+  .vu input { width:20px; height:20px; accent-color:var(--accent); }
+  .more { padding:6px; font-size:14px; max-width:44px; }
+  @media (max-width:560px) { .cat .name { flex-basis:100%; } .item { flex-wrap:wrap; } .item .lbl { flex-basis:calc(100% - 54px); } .item .ctrls { width:100%; justify-content:space-between; padding-left:50px; } }
+  /* Tirage */
+  .pick { display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; }
+  .pick .pp { width:200px; max-width:40%; border-radius:10px; }
+  .pick .ph { width:200px; max-width:40%; border-radius:10px; }
+  .pick .txt { flex:1 1 260px; }
+  .pick h3 { margin:2px 0 6px; font-size:26px; }
+  .rolling h3 { color:var(--dim); }
+  .syn { color:#cfcfe0; font-size:15px; margin:10px 0; white-space:pre-line; }
+  .hist { list-style:none; padding:0; margin:0; display:grid; gap:4px; }
+  .hist li { display:flex; gap:10px; padding:6px 8px; border-radius:6px; background:var(--card2); font-size:14px; }
+  .hist .when { color:var(--dim); min-width:92px; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:10px; }
+  .stat { background:var(--card2); border-radius:10px; padding:10px; }
+  .stat b { display:block; font-size:24px; }
+  .stat span { color:var(--dim); font-size:13px; }
+  .bar2 { height:8px; background:#2c2c44; border-radius:99px; overflow:hidden; margin-top:6px; }
+  .bar2 i { display:block; height:100%; background:var(--accent); }
+  /* Réglages */
+  .set { display:grid; grid-template-columns:minmax(150px, 260px) 1fr; gap:10px 14px; align-items:center; }
+  @media (max-width:560px) { .set { grid-template-columns:1fr; } .set label { margin-top:6px; } }
+  .swatches { display:flex; gap:8px; flex-wrap:wrap; }
+  .sw { width:34px; height:34px; border-radius:50%; border:3px solid transparent; padding:0; }
+  .sw.on { border-color:#fff; }
+  .players { display:flex; gap:6px; flex-wrap:wrap; }
+  .players .chip { font-size:14px; padding:5px 6px 5px 12px; color:var(--text); }
+  .players .chip button { background:none; padding:0 6px; color:var(--dim); }
+  /* Divers */
+  .bar { position:sticky; bottom:0; background:#101019f0; border-top:1px solid var(--line); padding:10px 0; margin-top:20px; z-index:5; }
   #status { font-size:14px; color:var(--dim); }
   #status.ok { color:var(--ok); } #status.err { color:var(--err); }
   .hidden { display:none !important; }
   main { padding-bottom:20px; min-height:60vh; }
+  dialog { background:var(--card); color:var(--text); border:1px solid var(--line); border-radius:14px; padding:0; width:min(680px, 94vw); max-height:90vh; }
+  dialog::backdrop { background:#000a; }
+  .dlg { padding:16px; overflow:auto; max-height:88vh; }
+  .dlg .top { display:flex; gap:14px; flex-wrap:wrap; }
+  .dlg .top img, .dlg .top .ph { width:150px; border-radius:8px; flex:none; }
+  .dlg h3 { margin:0 0 6px; font-size:22px; }
+  .close { float:right; }
+  .empty { text-align:center; color:var(--dim); padding:30px 10px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>Film au Hasard</h1>
-    <nav class="tabs">
-      <button data-tab="search" class="on">Rechercher</button>
-      <button data-tab="lists">Mes listes</button>
-    </nav>
+    <h1>🎲 Film au Hasard</h1>
+    <span class="ver" id="ver"></span>
   </header>
+  <nav class="tabs">
+    <button data-tab="search" class="on">🔍 Rechercher</button>
+    <button data-tab="lists">📋 Mes listes</button>
+    <button data-tab="pick">🎲 Tirage</button>
+    <button data-tab="settings">⚙️ Réglages</button>
+  </nav>
 
   <main>
-    <!-- Onglet recherche -->
+    <!-- ================= Rechercher ================= -->
     <section id="tab-search">
       <div class="row">
         <div class="seg" id="types">
@@ -76,21 +135,111 @@
         <select id="target"></select>
       </div>
       <form id="sform" class="row" style="margin-top:10px">
-        <input id="q" type="search" class="grow" placeholder="Nom du film…" autocomplete="off">
+        <input id="q" type="search" class="grow" placeholder="Nom du film…" autocomplete="off" enterkeyhint="search">
         <button class="primary">Chercher</button>
       </form>
-      <div id="sinfo" class="hint" style="margin-top:10px"></div>
+      <div id="sinfo" class="hint" style="margin-top:10px">Astuce : clique sur une affiche pour lire le résumé.</div>
       <div id="results" class="grid"></div>
     </section>
 
-    <!-- Onglet listes -->
+    <!-- ================= Mes listes ================= -->
     <section id="tab-lists" class="hidden">
+      <div class="toolbar">
+        <input id="lq" type="search" placeholder="Chercher dans mes listes…">
+        <select id="lstatus">
+          <option value="">Tous</option>
+          <option value="todo">À voir</option>
+          <option value="seen">Déjà vus</option>
+          <option value="fav">Favoris</option>
+        </select>
+        <select id="lgenre"></select>
+        <select id="lsort">
+          <option value="added">Ordre d'ajout</option>
+          <option value="az">A → Z</option>
+          <option value="year">Année (récent)</option>
+          <option value="rating">Ma note</option>
+        </select>
+      </div>
       <div id="cats"></div>
       <div class="row">
         <button id="addCat">+ Nouvelle catégorie</button>
-        <button id="export">Exporter (sauvegarde)</button>
-        <button id="import">Importer</button>
-        <input id="file" type="file" accept=".json,application/json" hidden>
+      </div>
+    </section>
+
+    <!-- ================= Tirage ================= -->
+    <section id="tab-pick" class="hidden">
+      <div class="card">
+        <div class="row">
+          <select id="pkey" style="flex:1 1 100%"></select>
+          <button id="pickHere" class="primary">🎲 Tirer ici</button>
+          <button id="pickTv">📺 Tirer sur la télé</button>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <select id="fgenre"></select>
+          <select id="fdur">
+            <option value="0">Durée : peu importe</option>
+            <option value="30">Max 30 min</option>
+            <option value="60">Max 1 h</option>
+            <option value="90">Max 1 h 30</option>
+            <option value="120">Max 2 h</option>
+            <option value="150">Max 2 h 30</option>
+          </select>
+          <select id="fdec">
+            <option value="">Toutes les époques</option>
+            <option value="old">Avant 1980</option>
+            <option value="1980">Années 80</option>
+            <option value="1990">Années 90</option>
+            <option value="2000">Années 2000</option>
+            <option value="2010">Années 2010</option>
+            <option value="2020">Années 2020</option>
+          </select>
+          <label class="vu"><input type="checkbox" id="ffav"> Favoris seulement</label>
+          <label class="vu"><input type="checkbox" id="fwatched"> Inclure les vus</label>
+        </div>
+        <div class="hint" id="pcount" style="margin-top:8px"></div>
+      </div>
+      <div id="pickOut" class="card hidden" style="margin-top:14px"></div>
+
+      <h2>👥 Qui choisit ce soir ?</h2>
+      <div class="row">
+        <button id="whoHere">Tirer un prénom ici</button>
+        <button id="whoTv">📺 Sur la télé</button>
+        <span id="whoOut" style="font-size:22px; font-weight:800; color:var(--accent)"></span>
+      </div>
+      <div class="hint" id="whoHint"></div>
+
+      <h2>📊 Statistiques</h2>
+      <div id="stats"></div>
+
+      <h2>🕒 Historique des tirages <button id="clearHist" class="small ghost">Effacer</button></h2>
+      <ul id="hist" class="hist"></ul>
+    </section>
+
+    <!-- ================= Réglages ================= -->
+    <section id="tab-settings" class="hidden">
+      <div class="card set" id="setForm"></div>
+
+      <h2>👥 Joueurs (pour « Qui choisit ce soir ? »)</h2>
+      <div class="card">
+        <div class="players" id="players"></div>
+        <form id="pform" class="row" style="margin-top:10px">
+          <input id="pname" type="text" maxlength="20" placeholder="Prénom" class="grow">
+          <button>Ajouter</button>
+        </form>
+      </div>
+
+      <h2>💾 Sauvegarde</h2>
+      <div class="card">
+        <div class="hint" id="space"></div>
+        <div class="bar2"><i id="spaceBar" style="width:0"></i></div>
+        <div class="row" style="margin-top:12px">
+          <button id="export">Exporter (fichier)</button>
+          <button id="import">Importer…</button>
+          <button id="resetSettings" class="ghost">Réglages par défaut</button>
+          <button id="wipe" class="danger">Tout effacer</button>
+          <input id="file" type="file" accept=".json,application/json" hidden>
+        </div>
+        <p class="hint">La liste est gardée dans la mémoire de la Roku. Elle est effacée si l'app est désinstallée : exporte-la de temps en temps !</p>
       </div>
     </section>
   </main>
@@ -98,15 +247,30 @@
   <div class="bar"><span id="status">Chargement…</span></div>
 </div>
 
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+
 <script>
-const MAX = 15000;
+'use strict';
 const $ = s => document.querySelector(s);
-let data = { c: [] };
-let type = 'movie';
-let lastResults = [];
+const $$ = s => [...document.querySelectorAll(s)];
+let data = { c: [] }, settings = {}, hist = [], info = { max: 13000 };
+let type = 'movie', lastResults = [];
 const targetByType = {};
 
-/* ---------- Affiches : codes courts pour économiser la mémoire de la Roku ---------- */
+/* =================== Genres (mêmes codes que sur la Roku) =================== */
+const GENRES = [['A','Action'],['V','Aventure'],['C','Comédie'],['D','Drame'],['H','Horreur'],['T','Thriller'],['S','Science-fiction'],['F','Fantastique'],['R','Romance'],['P','Policier'],['M','Mystère'],['N','Animation'],['O','Documentaire'],['Y','Famille'],['U','Musique'],['G','Histoire / Guerre'],['W','Western'],['L','Sport'],['K','Tranche de vie']];
+const GNAME = Object.fromEntries(GENRES);
+const GMAP = [[/action/i,'A'],[/advent|aventure/i,'V'],[/com[eé]d/i,'C'],[/drama|drame/i,'D'],[/horror|horreur/i,'H'],[/thriller|suspense/i,'T'],[/sci-?fi|science/i,'S'],[/fantas|supernatural|surnaturel/i,'F'],[/romance|romanti/i,'R'],[/crime|polic/i,'P'],[/myst/i,'M'],[/^animation$|^anime$/i,'N'],[/documentar/i,'O'],[/family|famil|kids|children|enfant|jeunesse/i,'Y'],[/music/i,'U'],[/\bwar\b|histor|guerre|military/i,'G'],[/western/i,'W'],[/sport/i,'L'],[/slice of life/i,'K']];
+function mapGenres(names) {
+  let out = '';
+  for (const n of names || []) for (const [re, k] of GMAP) if (re.test(n) && !out.includes(k)) out += k;
+  return out.slice(0, 8);
+}
+const genreNames = g => (g || '').split('').map(k => GNAME[k]).filter(Boolean).join(', ');
+function fmtDur(m) { if (!m) return ''; if (m < 60) return m + ' min'; const h = Math.floor(m / 60), r = m % 60; return h + ' h' + (r ? ' ' + String(r).padStart(2, '0') : ''); }
+function metaLine(it) { return [it.y, genreNames(it.g), fmtDur(it.d)].filter(Boolean).join(' · '); }
+
+/* =================== Affiches =================== */
 function compactImg(u) {
   if (!u) return '';
   let m;
@@ -123,26 +287,85 @@ function imgUrl(p) {
   if (pre === 'i:') { const i = rest.indexOf('/'); return 'https://is' + rest.slice(0, i) + '-ssl.mzstatic.com/image/thumb/' + rest.slice(i + 1) + '/200x300bb.jpg'; }
   return p;
 }
+const itunesArt = (u, size) => u ? u.replace(/\/[^/]+$/, '/' + size + 'bb.jpg') : '';
+// Les films iTunes ne gardent que leur numéro (pour économiser la mémoire de la Roku) :
+// on retrouve l'affiche avec l'API « lookup », en lot, et on la garde dans le navigateur.
+let posterCache = {};
+try { posterCache = JSON.parse(localStorage.getItem('posters') || '{}'); } catch (e) {}
+const lookupQueue = new Set(); let lookupTimer = null;
+function thumb(it) {
+  if (it.p) return imgUrl(it.p);
+  if (it.s && it.s.startsWith('i:')) {
+    if (posterCache[it.s] !== undefined) return posterCache[it.s];
+    lookupQueue.add(it.s.slice(2)); clearTimeout(lookupTimer); lookupTimer = setTimeout(runLookup, 300);
+  }
+  return '';
+}
+async function runLookup() {
+  const ids = [...lookupQueue]; lookupQueue.clear();
+  for (let i = 0; i < ids.length; i += 50) {
+    const chunk = ids.slice(i, i + 50);
+    for (const country of [settings.country || 'us', 'us']) {
+      const missing = chunk.filter(id => posterCache['i:' + id] === undefined);
+      if (!missing.length) break;
+      try {
+        const d = await (await fetch('https://itunes.apple.com/lookup?id=' + missing.join(',') + '&country=' + country)).json();
+        for (const r of d.results || []) posterCache['i:' + r.trackId] = itunesArt(r.artworkUrl100, '200x300');
+      } catch (e) { return; }
+    }
+    chunk.forEach(id => { if (posterCache['i:' + id] === undefined) posterCache['i:' + id] = ''; });
+  }
+  try { localStorage.setItem('posters', JSON.stringify(posterCache)); } catch (e) {}
+  $$('img[data-s]').forEach(img => { const u = posterCache[img.dataset.s]; if (u) img.src = u; });
+}
+const imgTag = (it, cls) => { const u = thumb(it); return `<img class="${cls}" loading="lazy" alt="" ${it.s ? `data-s="${esc(it.s)}"` : ''} src="${esc(u || PH)}">`; };
+const PH = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300"><rect width="200" height="300" fill="#26263a"/><text x="100" y="175" font-size="90" font-family="sans-serif" font-weight="800" text-anchor="middle" fill="#44445e">?</text></svg>');
 
-/* ---------- Recherche ---------- */
+/* =================== Détails (résumé…) depuis Internet =================== */
+const detailsCache = {};
+async function fetchDetails(s) {
+  if (!s) return null;
+  if (detailsCache[s]) return detailsCache[s];
+  const kind = s.slice(0, 2), id = s.slice(2);
+  let d = null;
+  try {
+    if (kind === 't:') {
+      const j = await (await fetch('https://api.tvmaze.com/shows/' + id + '?embed=seasons')).json();
+      const seasons = (j._embedded && j._embedded.seasons || []).length;
+      d = { syn: stripHtml(j.summary), img: j.image && (j.image.original || j.image.medium), genres: (j.genres || []).join(', '), score: j.rating && j.rating.average ? j.rating.average + '/10' : '', extra: [seasons ? seasons + ' saison' + (seasons > 1 ? 's' : '') : '', j.status === 'Ended' ? 'terminée' : j.status === 'Running' ? 'en cours' : '', (j.network || j.webChannel || {}).name].filter(Boolean).join(' · ') };
+    } else if (kind === 'm:') {
+      const a = (await (await fetch('https://api.jikan.moe/v4/anime/' + id)).json()).data;
+      d = { syn: (a.synopsis || '').replace(/\[Written by.*$/s, '').trim(), img: a.images && a.images.jpg && (a.images.jpg.large_image_url || a.images.jpg.image_url), genres: (a.genres || []).map(g => g.name).join(', '), score: a.score ? a.score + '/10' : '', extra: [a.type, a.episodes ? a.episodes + ' épisodes' : '', a.studios && a.studios[0] && a.studios[0].name].filter(Boolean).join(' · ') };
+    } else if (kind === 'i:') {
+      let r = null;
+      for (const c of [settings.country || 'us', 'us']) { const j = await (await fetch('https://itunes.apple.com/lookup?id=' + id + '&country=' + c)).json(); if (j.results && j.results[0]) { r = j.results[0]; break; } }
+      if (r) d = { syn: r.longDescription || r.shortDescription || '', img: itunesArt(r.artworkUrl100, '400x600'), genres: r.primaryGenreName || '', score: '', extra: [r.contentAdvisoryRating, r.artistName ? 'de ' + r.artistName : ''].filter(Boolean).join(' · ') };
+    }
+  } catch (e) { d = null; }
+  if (d) detailsCache[s] = d;
+  return d;
+}
+function stripHtml(h) { const el = document.createElement('div'); el.innerHTML = h || ''; return el.textContent.trim(); }
+function parseJikanDur(s) { let t = 0, m; if ((m = /(\d+)\s*hr/i.exec(s || ''))) t += +m[1] * 60; if ((m = /(\d+)\s*min/i.exec(s || ''))) t += +m[1]; return t; }
+
+/* =================== Recherche =================== */
 const SOURCES = {
   movie: { label: 'Nom du film…', async search(q) {
-    const r = await fetch('https://itunes.apple.com/search?media=movie&entity=movie&limit=30&term=' + encodeURIComponent(q));
-    const d = await r.json(); const seen = new Set();
-    return d.results.map(x => ({ t: x.trackName, y: (x.releaseDate || '').slice(0, 4), p: compactImg(x.artworkUrl100) }))
+    const d = await (await fetch('https://itunes.apple.com/search?media=movie&entity=movie&limit=30&country=' + (settings.country || 'us') + '&term=' + encodeURIComponent(q))).json();
+    const seen = new Set();
+    return d.results.map(x => ({ t: x.trackName, y: (x.releaseDate || '').slice(0, 4), s: 'i:' + x.trackId, img: itunesArt(x.artworkUrl100, '200x300'), g: mapGenres((x.primaryGenreName || '').split(/\s*&\s*/)), d: x.trackTimeMillis ? Math.round(x.trackTimeMillis / 60000) : 0, syn: x.longDescription || '' }))
       .filter(x => { const k = x.t + x.y; if (seen.has(k)) return false; seen.add(k); return true; });
   }},
   tv: { label: 'Nom de la série…', async search(q) {
-    const r = await fetch('https://api.tvmaze.com/search/shows?q=' + encodeURIComponent(q));
-    return (await r.json()).map(({ show: s }) => ({ t: s.name, y: (s.premiered || '').slice(0, 4), p: compactImg(s.image && (s.image.original || s.image.medium)) }));
+    const d = await (await fetch('https://api.tvmaze.com/search/shows?q=' + encodeURIComponent(q))).json();
+    return d.map(({ show: s }) => ({ t: s.name, y: (s.premiered || '').slice(0, 4), s: 't:' + s.id, p: compactImg(s.image && (s.image.original || s.image.medium)), img: s.image && s.image.medium, g: mapGenres(s.genres), d: s.runtime || s.averageRuntime || 0, syn: stripHtml(s.summary) }));
   }},
   anime: { label: 'Nom de l\'animé…', async search(q) {
-    const r = await fetch('https://api.jikan.moe/v4/anime?sfw=true&limit=24&q=' + encodeURIComponent(q));
-    return (await r.json()).data.map(a => ({ t: a.title_english || a.title, alt: a.title_english && a.title !== a.title_english ? a.title : '', y: String(a.year || (a.aired && a.aired.from || '').slice(0, 4) || ''), p: compactImg(a.images && a.images.jpg && a.images.jpg.image_url) }));
+    const d = await (await fetch('https://api.jikan.moe/v4/anime?sfw=true&limit=24&q=' + encodeURIComponent(q))).json();
+    return d.data.map(a => { const img = a.images && a.images.jpg && a.images.jpg.image_url; return { t: a.title_english || a.title, alt: a.title_english && a.title !== a.title_english ? a.title : '', y: String(a.year || (a.aired && a.aired.from || '').slice(0, 4) || ''), s: 'm:' + a.mal_id, p: compactImg(img), img, g: mapGenres([...(a.genres || []), ...(a.themes || [])].map(g => g.name)), d: parseJikanDur(a.duration), syn: (a.synopsis || '').replace(/\[Written by.*$/s, '').trim() }; });
   }},
 };
-
-const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 function defaultTarget(t) {
   const key = { movie: 'film', tv: 'serie', anime: 'anim' }[t];
   const i = data.c.findIndex(c => norm(c.n).includes(key));
@@ -156,167 +379,423 @@ function fillTarget() {
 $('#target').onchange = e => {
   if (e.target.value === 'new') {
     const n = prompt('Nom de la nouvelle catégorie :');
-    if (n && n.trim()) { data.c.push({ n: n.trim().slice(0, 40), i: [] }); targetByType[type] = data.c.length - 1; save(); renderAll(); }
+    if (n && n.trim()) { data.c.push({ n: n.trim().slice(0, 40), i: [] }); targetByType[type] = data.c.length - 1; saveData(); renderAll(); }
     else fillTarget();
   } else targetByType[type] = +e.target.value;
   renderResults();
 };
-
-document.querySelectorAll('#types button').forEach(b => b.onclick = () => {
+$$('#types button').forEach(b => b.onclick = () => {
   type = b.dataset.type;
-  document.querySelectorAll('#types button').forEach(x => x.classList.toggle('on', x === b));
+  $$('#types button').forEach(x => x.classList.toggle('on', x === b));
   $('#q').placeholder = SOURCES[type].label;
   lastResults = []; renderResults(); $('#sinfo').textContent = '';
   fillTarget();
   if ($('#q').value.trim()) doSearch();
 });
-
-$('#sform').onsubmit = e => { e.preventDefault(); doSearch(); };
+$('#sform').onsubmit = e => { e.preventDefault(); $('#q').blur(); doSearch(); };
 async function doSearch() {
   const q = $('#q').value.trim(); if (!q) return;
   $('#sinfo').textContent = 'Recherche…';
   try {
     lastResults = await SOURCES[type].search(q);
-    $('#sinfo').textContent = lastResults.length ? lastResults.length + ' résultat(s)' : 'Aucun résultat. Essaie le titre en anglais ?';
+    $('#sinfo').textContent = lastResults.length ? lastResults.length + ' résultat(s) — clique sur une affiche pour le résumé' : 'Aucun résultat. Essaie le titre original ou en anglais ?';
   } catch (err) {
     lastResults = [];
-    $('#sinfo').textContent = 'La recherche a échoué (connexion Internet ?). Tu peux quand même ajouter un titre à la main dans « Mes listes ».';
+    $('#sinfo').textContent = 'La recherche a échoué (Internet ?). Tu peux ajouter un titre à la main dans « Mes listes ».';
   }
   renderResults();
 }
-
-function inCat(ci, t) { const c = data.c[ci]; return !!c && c.i.some(x => norm(x.t) === norm(t)); }
-
+const findIn = (ci, r) => { const c = data.c[ci]; return c ? c.i.findIndex(x => (r.s && x.s === r.s) || norm(x.t) === norm(r.t)) : -1; };
+function addResult(r, ci, opts = {}) {
+  if (!data.c.length) data.c.push({ n: { movie: 'Films', tv: 'Séries', anime: 'Animés' }[type], i: [] });
+  const target = data.c[ci] || data.c[0];
+  const it = { t: r.t.slice(0, 120) };
+  if (r.y) it.y = r.y.slice(0, 4);
+  if (r.s) it.s = r.s;
+  if (r.p) it.p = r.p;
+  if (r.g) it.g = r.g;
+  if (r.d) it.d = r.d;
+  if (opts.w) it.w = 1;
+  if (r.s && r.s.startsWith('i:') && r.img) { posterCache[r.s] = r.img; try { localStorage.setItem('posters', JSON.stringify(posterCache)); } catch (e) {} }
+  target.i.push(it);
+  saveData('« ' + r.t + ' » ajouté à ' + target.n);
+  renderAll();
+}
 function renderResults() {
   const ci = +$('#target').value;
-  $('#results').innerHTML = '';
+  const box = $('#results'); box.innerHTML = '';
   lastResults.forEach(r => {
-    const el = document.createElement('div');
-    el.className = 'res';
-    const has = inCat(ci, r.t);
-    el.innerHTML = (r.p ? `<img class="poster" loading="lazy" src="${esc(imgUrl(r.p))}" alt="">` : '<div class="ph">?</div>') +
-      `<div class="info"><div class="t">${esc(r.t)}</div>${r.alt ? `<div class="y">${esc(r.alt)}</div>` : ''}<div class="y">${esc(r.y || '')}</div>
+    const has = findIn(ci, r) >= 0;
+    const el = document.createElement('div'); el.className = 'res';
+    el.innerHTML = (r.img ? `<img class="poster" loading="lazy" src="${esc(r.img)}" alt="">` : '<div class="ph">?</div>') +
+      `<div class="info"><div class="t">${esc(r.t)}</div>${r.alt ? `<div class="meta">${esc(r.alt)}</div>` : ''}<div class="meta">${esc(metaLine(r))}</div>
        <button class="${has ? 'added' : 'primary'}" ${has ? 'disabled' : ''}>${has ? '✓ Dans la liste' : '+ Ajouter'}</button></div>`;
-    el.querySelector('button').onclick = () => {
-      if (!data.c.length) data.c.push({ n: { movie: 'Films', tv: 'Séries', anime: 'Animés' }[type], i: [] });
-      const target = data.c[+$('#target').value] || data.c[0];
-      const item = { t: r.t.slice(0, 120) };
-      if (r.y) item.y = r.y.slice(0, 4);
-      if (r.p) item.p = r.p;
-      target.i.push(item);
-      save('« ' + r.t + ' » ajouté à ' + target.n);
-      renderAll();
-    };
-    $('#results').appendChild(el);
+    el.querySelector('button').onclick = () => addResult(r, +$('#target').value);
+    el.firstElementChild.onclick = () => openResultDialog(r);
+    box.appendChild(el);
   });
 }
+function openResultDialog(r) {
+  const ci = +$('#target').value, has = findIn(ci, r) >= 0;
+  showDialog(`
+    <button class="close icon ghost" data-close>✕</button>
+    <div class="top">${r.img ? `<img src="${esc(r.img)}" alt="">` : '<div class="ph">?</div>'}
+      <div class="grow"><h3>${esc(r.t)}</h3>${r.alt ? `<div class="meta">${esc(r.alt)}</div>` : ''}<div class="meta">${esc(metaLine(r))}</div>
+      <p class="syn">${esc(r.syn || 'Pas de résumé.')}</p></div></div>
+    <div class="row" style="margin-top:10px">
+      <button class="primary" id="dAdd" ${has ? 'disabled' : ''}>${has ? '✓ Déjà dans la liste' : '+ Ajouter à ' + esc((data.c[ci] || {}).n || '')}</button>
+      ${has ? '' : '<button id="dAddSeen">+ Ajouter comme déjà vu</button>'}
+    </div>`);
+  const a = $('#dAdd'); if (a && !has) a.onclick = () => { addResult(r, ci); closeDialog(); };
+  const b = $('#dAddSeen'); if (b) b.onclick = () => { addResult(r, ci, { w: 1 }); closeDialog(); };
+}
 
-/* ---------- Mes listes ---------- */
+/* =================== Mes listes =================== */
+function fillGenreSelect(sel, firstLabel) {
+  const v = sel.value;
+  sel.innerHTML = `<option value="">${firstLabel}</option>` + GENRES.map(([k, n]) => `<option value="${k}">${n}</option>`).join('');
+  sel.value = v;
+}
+['#lq', '#lstatus', '#lgenre', '#lsort'].forEach(id => $(id).addEventListener('input', renderLists));
+function listFilter(it) {
+  const q = norm($('#lq').value), st = $('#lstatus').value, g = $('#lgenre').value;
+  if (q && !norm(it.t).includes(q)) return false;
+  if (st === 'todo' && it.w) return false;
+  if (st === 'seen' && !it.w) return false;
+  if (st === 'fav' && !it.f) return false;
+  if (g && !(it.g || '').includes(g)) return false;
+  return true;
+}
+function sortRows(rows) {
+  const s = $('#lsort').value;
+  if (s === 'az') rows.sort((a, b) => norm(a.it.t).localeCompare(norm(b.it.t)));
+  if (s === 'year') rows.sort((a, b) => (+b.it.y || 0) - (+a.it.y || 0));
+  if (s === 'rating') rows.sort((a, b) => (b.it.r || 0) - (a.it.r || 0));
+  return rows;
+}
+const starsHtml = r => '<span class="stars">' + [1, 2, 3, 4, 5].map(n => `<span data-star="${n}" class="${(r || 0) >= n ? 'on' : ''}">★</span>`).join('') + '</span>';
 function renderLists() {
   const root = $('#cats'); root.innerHTML = '';
+  const filtering = $('#lq').value || $('#lstatus').value || $('#lgenre').value;
+  if (!data.c.length) root.innerHTML = '<div class="empty">Aucune catégorie. Crée-en une avec le bouton ci-dessous.</div>';
   data.c.forEach((c, ci) => {
     const todo = c.i.filter(x => !x.w).length;
-    const box = document.createElement('div'); box.className = 'cat';
+    const box = document.createElement('div'); box.className = 'card cat';
     box.innerHTML = `
       <div class="row">
         <input type="text" class="name" maxlength="40">
         <span class="cnt">${todo} à voir / ${c.i.length}</span>
+        <button class="icon tv" title="Tirer au hasard sur la télé">📺</button>
         <button class="icon up" title="Monter">↑</button>
         <button class="icon down" title="Descendre">↓</button>
-        <button class="icon danger del" title="Supprimer la catégorie">✕</button>
+        <select class="more" title="Plus d'actions">
+          <option value="">⋯</option>
+          <option value="bulk">Ajouter plusieurs titres…</option>
+          <option value="unwatch">Tout remettre « à voir »</option>
+          <option value="delseen">Supprimer les déjà vus</option>
+          <option value="del">Supprimer la catégorie</option>
+        </select>
       </div>
       <ul class="items"></ul>
       <form class="row add"><input type="text" class="grow" placeholder="Ajouter un titre à la main…" maxlength="120"><button>Ajouter</button></form>`;
     const name = box.querySelector('.name'); name.value = c.n;
-    name.onchange = () => { const v = name.value.trim(); if (v) { c.n = v; save(); fillTarget(); } else name.value = c.n; };
-    box.querySelector('.up').onclick = () => { if (ci > 0) { [data.c[ci - 1], data.c[ci]] = [data.c[ci], data.c[ci - 1]]; save(); renderAll(); } };
-    box.querySelector('.down').onclick = () => { if (ci < data.c.length - 1) { [data.c[ci + 1], data.c[ci]] = [data.c[ci], data.c[ci + 1]]; save(); renderAll(); } };
-    box.querySelector('.del').onclick = () => { if (confirm('Supprimer « ' + c.n + ' » et ses ' + c.i.length + ' titres ?')) { data.c.splice(ci, 1); save(); renderAll(); } };
+    name.onchange = () => { const v = name.value.trim(); if (v) { c.n = v.slice(0, 40); saveData(); fillTarget(); fillPickKey(); } else name.value = c.n; };
+    box.querySelector('.tv').onclick = () => cmd({ action: 'pick', k: ci + 1 }, 'Tirage lancé sur la télé 📺');
+    box.querySelector('.up').onclick = () => { if (ci > 0) { [data.c[ci - 1], data.c[ci]] = [data.c[ci], data.c[ci - 1]]; saveData(); renderAll(); } };
+    box.querySelector('.down').onclick = () => { if (ci < data.c.length - 1) { [data.c[ci + 1], data.c[ci]] = [data.c[ci], data.c[ci + 1]]; saveData(); renderAll(); } };
+    box.querySelector('.more').onchange = e => {
+      const v = e.target.value; e.target.value = '';
+      if (v === 'bulk') openBulk(ci);
+      if (v === 'unwatch' && confirm('Remettre tous les titres de « ' + c.n + ' » à voir ?')) { c.i.forEach(x => delete x.w); saveData(); renderAll(); }
+      if (v === 'delseen') { const n = c.i.filter(x => x.w).length; if (n && confirm('Supprimer les ' + n + ' titres déjà vus de « ' + c.n + ' » ?')) { c.i = c.i.filter(x => !x.w); saveData(); renderAll(); } }
+      if (v === 'del' && confirm('Supprimer « ' + c.n + ' » et ses ' + c.i.length + ' titres ?')) { data.c.splice(ci, 1); saveData(); renderAll(); }
+    };
     box.querySelector('.add').onsubmit = e => {
       e.preventDefault(); const inp = e.target.querySelector('input'); const t = inp.value.trim();
-      if (t) { c.i.push({ t }); save(); renderAll(); }
+      if (t) { c.i.push({ t: t.slice(0, 120) }); saveData('« ' + t + ' » ajouté'); renderAll(); }
     };
     const ul = box.querySelector('.items');
-    c.i.forEach((it, ii) => {
+    const rows = sortRows(c.i.map((it, ii) => ({ it, ii })).filter(r => listFilter(r.it)));
+    if (!rows.length) ul.innerHTML = `<li class="hint" style="padding:6px">${filtering ? 'Aucun titre ne correspond.' : 'Liste vide : utilise l\'onglet Rechercher ou ajoute un titre à la main.'}</li>`;
+    rows.forEach(({ it, ii }) => {
       const li = document.createElement('li'); li.className = 'item' + (it.w ? ' seen' : '');
-      li.innerHTML = (it.p ? `<img loading="lazy" src="${esc(imgUrl(it.p))}" alt="">` : '<div class="mini"></div>') +
-        `<span class="lbl">${esc(it.t)}${it.y ? ' <span class="cnt">(' + esc(it.y) + ')</span>' : ''}</span>
-         <label><input type="checkbox" ${it.w ? 'checked' : ''}> Vu</label>
-         <button class="icon danger" title="Retirer">✕</button>`;
-      li.querySelector('input').onchange = e => { if (e.target.checked) it.w = 1; else delete it.w; save(); renderAll(); };
-      li.querySelector('button').onclick = () => { c.i.splice(ii, 1); save(); renderAll(); };
+      li.innerHTML = imgTag(it, 'th') +
+        `<div class="lbl"><b>${esc(it.t)}</b><div class="meta">${esc(metaLine(it))}</div></div>
+         <div class="ctrls">${starsHtml(it.r)}
+           <button class="heart ${it.f ? 'on' : ''}" title="Favori (sort plus souvent)">♥</button>
+           <label class="vu"><input type="checkbox" ${it.w ? 'checked' : ''}> Vu</label>
+           <button class="icon danger del" title="Retirer">✕</button></div>`;
+      li.querySelector('.th').onclick = li.querySelector('.lbl').onclick = () => openItemDialog(ci, ii);
+      bindItemControls(li, it, () => renderAll());
+      li.querySelector('.del').onclick = () => { if (confirm('Retirer « ' + it.t + ' » ?')) { c.i.splice(ii, 1); saveData(); renderAll(); } };
       ul.appendChild(li);
     });
     root.appendChild(box);
   });
 }
-
-function renderAll() { fillTarget(); renderResults(); renderLists(); updateSpace(); }
-
-/* ---------- Communication avec la Roku ---------- */
-let saving = Promise.resolve(), pending = 0;
-function setStatus(msg, cls) { const s = $('#status'); s.textContent = msg; s.className = cls || ''; }
-function bytes() { return new TextEncoder().encode(JSON.stringify(data)).length; }
-function updateSpace(prefix) {
-  const pct = Math.round(bytes() / MAX * 100);
-  setStatus((prefix ? prefix + ' · ' : '') + 'mémoire utilisée ' + pct + ' %', pct > 100 ? 'err' : (prefix ? 'ok' : ''));
+function bindItemControls(el, it, after) {
+  el.querySelectorAll('[data-star]').forEach(s => s.onclick = () => { const n = +s.dataset.star; if (it.r === n) delete it.r; else it.r = n; saveData(); after(); });
+  el.querySelector('.heart').onclick = () => { if (it.f) delete it.f; else it.f = 1; saveData(); after(); };
+  el.querySelector('.vu input').onchange = e => { if (e.target.checked) it.w = 1; else delete it.w; saveData(); after(); };
 }
-function save(msg) {
-  if (bytes() > MAX) { setStatus('Mémoire de la Roku pleine ! Retire quelques titres (ou leurs affiches).', 'err'); return; }
-  pending++;
-  const body = JSON.stringify(data);
-  saving = saving.then(async () => {
-    try {
-      const r = await fetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-      const res = await r.json();
-      if (!r.ok) throw new Error(res.error || r.status);
-      updateSpace(msg || 'Enregistré sur la télé');
-    } catch (e) { setStatus('Erreur : ' + e.message + ' (l\'app est-elle ouverte sur la télé ?)', 'err'); }
-    finally { pending--; }
-  });
+function openBulk(ci) {
+  showDialog(`<button class="close icon ghost" data-close>✕</button><h3>Ajouter plusieurs titres à « ${esc(data.c[ci].n)} »</h3>
+    <p class="hint">Un titre par ligne (ex. : copié d'une note sur ton téléphone).</p>
+    <textarea id="bulkTxt" placeholder="Inception&#10;Le Parrain&#10;…"></textarea>
+    <div class="row" style="margin-top:10px"><button class="primary" id="bulkGo">Ajouter</button></div>`);
+  $('#bulkGo').onclick = () => {
+    const lines = $('#bulkTxt').value.split('\n').map(l => l.trim()).filter(Boolean);
+    const c = data.c[ci]; let n = 0;
+    lines.forEach(t => { if (!c.i.some(x => norm(x.t) === norm(t))) { c.i.push({ t: t.slice(0, 120) }); n++; } });
+    closeDialog(); saveData(n + ' titre(s) ajouté(s)'); renderAll();
+  };
 }
-const canon = d => JSON.stringify(d.c.map(c => [c.n, c.i.map(x => [x.t, x.y || '', x.p || '', x.w ? 1 : 0])]));
-async function load(first) {
-  try {
-    const r = await fetch('/api/data', { cache: 'no-store' });
-    const d = await r.json();
-    if (pending) return;
-    if (first || canon(d) !== canon(data)) {
-      const a = document.activeElement;
-      if (!first && a && a.matches('#tab-lists input[type=text]')) return; // ne pas déranger pendant la saisie
-      data = d; renderAll();
-      if (first) updateSpace('Liste chargée depuis la télé');
-    }
-  } catch (e) { if (first) setStatus('Impossible de joindre la Roku. L\'app est-elle ouverte ?', 'err'); }
+async function openItemDialog(ci, ii) {
+  const c = data.c[ci], it = c && c.i[ii]; if (!it) return;
+  const draw = det => {
+    const img = (det && det.img) || thumb(it);
+    showDialog(`
+      <button class="close icon ghost" data-close>✕</button>
+      <div class="top">${img ? `<img src="${esc(img)}" alt="">` : '<div class="ph">?</div>'}
+        <div class="grow"><div class="meta">${esc(c.n.toUpperCase())}</div><h3>${esc(it.t)}</h3>
+          <div class="meta">${esc(metaLine(it))}</div>
+          ${det ? `<div class="meta">${esc([det.genres, det.score && 'Note ' + det.score, det.extra].filter(Boolean).join(' · '))}</div>` : ''}
+          <div class="ctrls" style="justify-content:flex-start; margin-top:8px">${starsHtml(it.r)}
+            <button class="heart ${it.f ? 'on' : ''}">♥</button>
+            <label class="vu"><input type="checkbox" ${it.w ? 'checked' : ''}> Déjà vu</label></div>
+        </div></div>
+      <p class="syn">${it.s ? (det ? esc(det.syn || 'Pas de résumé.') : 'Chargement du résumé…') : 'Titre ajouté à la main : pas de résumé.'}</p>
+      <div class="row">
+        <button class="primary" id="dTv">📺 Afficher sur la télé</button>
+        <select id="dMove"><option value="">Déplacer vers…</option>${data.c.map((x, i) => i === ci ? '' : `<option value="${i}">${esc(x.n)}</option>`).join('')}</select>
+        <button class="danger" id="dDel">Retirer</button>
+      </div>`);
+    bindItemControls($('#dlgBody'), it, () => { renderAll(); draw(det); });
+    $('#dTv').onclick = () => cmd({ action: 'show', c: ci, i: ii }, 'Affiché sur la télé 📺');
+    $('#dMove').onchange = e => { const to = +e.target.value; if (e.target.value === '') return; c.i.splice(ii, 1); data.c[to].i.push(it); saveData('Déplacé vers ' + data.c[to].n); closeDialog(); renderAll(); };
+    $('#dDel').onclick = () => { if (confirm('Retirer « ' + it.t + ' » ?')) { c.i.splice(ii, 1); saveData(); closeDialog(); renderAll(); } };
+  };
+  draw(detailsCache[it.s]);
+  if (it.s && !detailsCache[it.s]) { const det = await fetchDetails(it.s); if ($('#dlg').open) draw(det || { syn: 'Résumé indisponible.' }); }
 }
-// Reste synchro avec la télé (ex. : quand tu coches « vu » avec la télécommande)
-setInterval(() => { if (document.visibilityState === 'visible') load(false); }, 4000);
 
-/* ---------- Divers ---------- */
-function esc(s) { return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+/* =================== Tirage =================== */
+function passes(it, s) {
+  if (!s.fwatched && it.w) return false;
+  if (s.ffav && !it.f) return false;
+  if (s.fgenre && !(it.g || '').includes(s.fgenre)) return false;
+  if (s.fdur > 0 && (it.d || 0) > s.fdur) return false;
+  if (s.fdec) { const y = +it.y || 0; if (!y) return false; if (s.fdec === 'old') { if (y >= 1980) return false; } else { const d = +s.fdec; if (y < d || y >= d + 10) return false; } }
+  return true;
+}
+function pool(k) {
+  const out = [];
+  data.c.forEach((c, ci) => { if (k === 0 || k - 1 === ci) c.i.forEach((it, ii) => { if (passes(it, settings)) out.push({ it, ci, ii }); }); });
+  return out;
+}
+function weightedPick(p) {
+  const recent = new Set(hist.slice(0, settings.avoid || 0).map(h => h.t));
+  let cands = p.filter(e => !recent.has(e.it.t)); if (!cands.length) cands = p;
+  const w = e => e.it.f ? (settings.favw || 1) : 1;
+  let r = Math.random() * cands.reduce((a, e) => a + w(e), 0);
+  for (const e of cands) { r -= w(e); if (r <= 0) return e; }
+  return cands[cands.length - 1];
+}
+function fillPickKey() {
+  const sel = $('#pkey'), v = sel.value || '0';
+  sel.innerHTML = '<option value="0">🎲 Surprise ! (toutes les catégories)</option>' + data.c.map((c, i) => `<option value="${i + 1}">${esc(c.n)}</option>`).join('');
+  sel.value = +v <= data.c.length ? v : '0';
+}
+function syncFilterInputs() {
+  $('#fgenre').value = settings.fgenre || ''; $('#fdur').value = String(settings.fdur || 0); $('#fdec').value = settings.fdec || '';
+  $('#ffav').checked = !!settings.ffav; $('#fwatched').checked = !!settings.fwatched;
+  updatePickCount();
+}
+function updatePickCount() {
+  const k = +$('#pkey').value || 0, n = pool(k).length;
+  $('#pcount').textContent = n + ' titre' + (n > 1 ? 's' : '') + ' possible' + (n > 1 ? 's' : '') + ' avec ces filtres (les filtres sont partagés avec la télé)';
+}
+$('#pkey').onchange = updatePickCount;
+['fgenre', 'fdur', 'fdec'].forEach(id => $('#' + id).onchange = e => saveSettings({ [id]: id === 'fdur' ? +e.target.value : e.target.value }));
+['ffav', 'fwatched'].forEach(id => $('#' + id).onchange = e => saveSettings({ [id]: e.target.checked }));
+$('#pickTv').onclick = () => cmd({ action: 'pick', k: +$('#pkey').value || 0 }, 'Tirage lancé sur la télé 📺');
+$('#pickHere').onclick = () => {
+  const p = pool(+$('#pkey').value || 0), out = $('#pickOut');
+  out.classList.remove('hidden');
+  if (!p.length) { out.innerHTML = '<div class="empty">Aucun titre ne correspond. Change les filtres ou ajoute des titres !</div>'; return; }
+  const final = weightedPick(p);
+  let n = 0; const steps = 14;
+  const tick = () => {
+    const e = n < steps ? p[Math.floor(Math.random() * p.length)] : final;
+    out.innerHTML = `<div class="pick ${n < steps ? 'rolling' : ''}"><div class="txt"><div class="meta">${esc(data.c[e.ci].n.toUpperCase())}</div><h3>${esc(e.it.t)}</h3></div></div>`;
+    if (n++ < steps) setTimeout(tick, 40 + n * 12); else showPicked(final, true);
+  };
+  tick();
+};
+async function showPicked(e, record) {
+  const out = $('#pickOut'), it = e.it, ci = e.ci, ii = e.ii;
+  if (record) cmd({ action: 'addHistory', t: it.t, c: data.c[ci].n });
+  const draw = det => {
+    const img = (det && det.img) || thumb(it);
+    out.innerHTML = `<div class="pick">${img ? `<img class="pp" src="${esc(img)}" alt="">` : '<div class="ph">?</div>'}
+      <div class="txt"><div class="meta">${esc(data.c[ci].n.toUpperCase())}</div><h3>${esc(it.t)}</h3>
+      <div class="meta">${esc(metaLine(it))}</div>
+      ${det ? `<div class="meta">${esc([det.score && 'Note ' + det.score, det.extra].filter(Boolean).join(' · '))}</div>` : ''}
+      <p class="syn">${it.s ? (det ? esc(det.syn || '') : 'Chargement du résumé…') : ''}</p>
+      <div class="ctrls" style="justify-content:flex-start">${starsHtml(it.r)}<button class="heart ${it.f ? 'on' : ''}">♥</button><label class="vu"><input type="checkbox" ${it.w ? 'checked' : ''}> Déjà vu</label></div>
+      <div class="row" style="margin-top:12px"><button class="primary" id="again">🎲 Relancer</button><button id="toTv">📺 Afficher sur la télé</button></div></div></div>`;
+    bindItemControls(out, it, () => { renderAll(); draw(det); });
+    $('#again').onclick = () => $('#pickHere').click();
+    $('#toTv').onclick = () => cmd({ action: 'show', c: ci, i: ii }, 'Affiché sur la télé 📺');
+  };
+  draw(detailsCache[it.s]);
+  if (it.s && !detailsCache[it.s]) { const det = await fetchDetails(it.s); if (out.contains(document.getElementById('again'))) draw(det); }
+}
+$('#whoHere').onclick = () => {
+  const p = settings.players || [];
+  if (!p.length) { $('#whoHint').textContent = 'Ajoute des prénoms dans l\'onglet Réglages.'; return; }
+  let n = 0; const fin = p[Math.floor(Math.random() * p.length)];
+  const tick = () => { $('#whoOut').textContent = n < 12 ? p[Math.floor(Math.random() * p.length)] : '👉 ' + fin + ' choisit !'; if (n++ < 12) setTimeout(tick, 50 + n * 15); };
+  tick();
+};
+$('#whoTv').onclick = () => cmd({ action: 'players' }, 'Regarde la télé 📺');
+$('#clearHist').onclick = () => { if (confirm('Effacer l\'historique des tirages ?')) { hist = []; renderHistory(); cmd({ action: 'clearHistory' }, 'Historique effacé'); } };
+function renderHistory() {
+  const ul = $('#hist');
+  ul.innerHTML = hist.length ? hist.map(h => `<li><span class="when">${esc(fmtWhen(h.ts))}</span><span class="grow">${esc(h.t)}</span><span class="meta">${esc(h.c || '')}</span></li>`).join('') : '<li class="hint">Aucun tirage pour l\'instant.</li>';
+}
+function fmtWhen(ts) {
+  if (!ts) return '';
+  const d = new Date(ts * 1000), now = new Date(), diff = (now - d) / 1000;
+  if (diff < 60) return 'à l\'instant';
+  if (diff < 3600) return 'il y a ' + Math.floor(diff / 60) + ' min';
+  if (d.toDateString() === now.toDateString()) return 'auj. ' + d.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
+}
+function renderStats() {
+  let total = 0, seen = 0, favs = 0, rated = 0, sumR = 0, mins = 0; const gc = {};
+  data.c.forEach(c => c.i.forEach(it => { total++; if (it.w) { seen++; mins += it.d || 0; } if (it.f) favs++; if (it.r) { rated++; sumR += it.r; } (it.g || '').split('').forEach(k => gc[k] = (gc[k] || 0) + 1); }));
+  const top = Object.entries(gc).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, n]) => GNAME[k] + ' (' + n + ')').join(', ');
+  const tile = (v, l) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`;
+  $('#stats').innerHTML = `<div class="stats">${tile(total, 'titres')}${tile(total - seen, 'à voir')}${tile(seen, 'déjà vus')}${tile(favs, 'favoris')}${rated ? tile((sumR / rated).toFixed(1).replace('.', ',') + '/5', 'note moyenne') : ''}${mins ? tile(fmtDur(mins), 'devant l\'écran') : ''}${tile(hist.length, 'tirages')}</div>` +
+    data.c.map(c => { const n = c.i.length, s = c.i.filter(x => x.w).length, pct = n ? Math.round(s * 100 / n) : 0; return `<div style="margin-top:10px"><div class="row"><span class="grow">${esc(c.n)}</span><span class="cnt">${s} / ${n} vus (${pct} %)</span></div><div class="bar2"><i style="width:${pct}%"></i></div></div>`; }).join('') +
+    (top ? `<p class="hint">Genres les plus présents : ${esc(top)}</p>` : '');
+}
 
-document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
-  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
-  $('#tab-search').classList.toggle('hidden', b.dataset.tab !== 'search');
-  $('#tab-lists').classList.toggle('hidden', b.dataset.tab !== 'lists');
-});
-$('#addCat').onclick = () => { const n = prompt('Nom de la catégorie :'); if (n && n.trim()) { data.c.push({ n: n.trim().slice(0, 40), i: [] }); save(); renderAll(); } };
+/* =================== Réglages =================== */
+const SETTINGS_UI = [
+  ['mode', 'Mode de tirage', [['one', '1 titre'], ['three', '3 choix proposés']]],
+  ['anim', 'Animation', [['normal', 'Normale'], ['fast', 'Rapide'], ['off', 'Aucune']]],
+  ['avoid', 'Éviter les derniers tirages', [[0, 'Non'], [1, 'Le dernier'], [3, 'Les 3 derniers'], [5, 'Les 5 derniers'], [10, 'Les 10 derniers']]],
+  ['favw', 'Chances des favoris', [[1, 'Normales'], [2, 'x2'], [3, 'x3'], [5, 'x5']]],
+  ['synopsis', 'Résumé sur la télé', [[true, 'Afficher'], [false, 'Masquer']]],
+  ['sound', 'Sons sur la télé', [[true, 'Oui'], [false, 'Non']]],
+  ['sort', 'Tri des listes sur la télé', [['added', 'Ordre d\'ajout'], ['az', 'A à Z'], ['year', 'Année'], ['rating', 'Ma note']]],
+  ['country', 'Boutique iTunes (recherche de films)', [['us', 'États-Unis'], ['ca', 'Canada'], ['fr', 'France (titres en français)']]],
+];
+const ACCENTS = { gold: '#ffc94d', blue: '#5ab8ff', pink: '#ff6fb5', green: '#5ce08a', orange: '#ff8a3d', purple: '#b38cff' };
+function renderSettings() {
+  const f = $('#setForm');
+  f.innerHTML = SETTINGS_UI.map(([k, label, opts]) => `<label for="set-${k}">${label}</label><select id="set-${k}">${opts.map(([v, l]) => `<option value='${JSON.stringify(v)}'>${l}</option>`).join('')}</select>`).join('') +
+    `<label>Couleur</label><div class="swatches">${Object.entries(ACCENTS).map(([k, c]) => `<button class="sw ${settings.accent === k ? 'on' : ''}" data-acc="${k}" style="background:${c}" title="${k}"></button>`).join('')}</div>`;
+  SETTINGS_UI.forEach(([k]) => { const sel = $('#set-' + k); sel.value = JSON.stringify(settings[k]); sel.onchange = () => saveSettings({ [k]: JSON.parse(sel.value) }); });
+  $$('[data-acc]').forEach(b => b.onclick = () => saveSettings({ accent: b.dataset.acc }));
+  document.documentElement.style.setProperty('--accent', ACCENTS[settings.accent] || ACCENTS.gold);
+  const p = settings.players || [];
+  $('#players').innerHTML = p.length ? p.map((n, i) => `<span class="chip">${esc(n)}<button data-pl="${i}" title="Retirer">✕</button></span>`).join('') : '<span class="hint">Aucun joueur.</span>';
+  $$('[data-pl]').forEach(b => b.onclick = () => { const l = [...p]; l.splice(+b.dataset.pl, 1); saveSettings({ players: l }); });
+  $('#whoHint').textContent = p.length ? 'Joueurs : ' + p.join(', ') : 'Ajoute des prénoms dans l\'onglet Réglages.';
+}
+$('#pform').onsubmit = e => { e.preventDefault(); const n = $('#pname').value.trim(); if (n) { saveSettings({ players: [...(settings.players || []), n.slice(0, 20)] }); $('#pname').value = ''; } };
+$('#resetSettings').onclick = () => { if (confirm('Remettre tous les réglages par défaut (les joueurs sont gardés) ?')) saveSettings({ mode: 'one', anim: 'normal', avoid: 5, favw: 2, sound: true, synopsis: true, accent: 'gold', sort: 'added', country: 'us', fgenre: '', fdur: 0, fdec: '', ffav: false, fwatched: false }); };
+$('#wipe').onclick = () => { if (confirm('Effacer TOUTE la liste ? (pense à exporter avant)') && confirm('Vraiment sûr ?')) { data = { c: [{ n: 'Films', i: [] }, { n: 'Séries', i: [] }, { n: 'Animés', i: [] }] }; saveData('Liste effacée'); renderAll(); } };
 $('#export').onclick = () => {
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }));
-  a.download = 'film-au-hasard.json'; a.click();
+  a.href = URL.createObjectURL(new Blob([JSON.stringify({ app: 'film-au-hasard', version: info.version, date: new Date().toISOString(), data, settings }, null, 1)], { type: 'application/json' }));
+  a.download = 'film-au-hasard-' + new Date().toISOString().slice(0, 10) + '.json'; a.click();
 };
 $('#import').onclick = () => $('#file').click();
 $('#file').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
   try {
-    const d = JSON.parse(await f.text());
-    const cats = d.c || (d.categories || []).map(c => ({ n: c.name, i: (c.items || []).map(t => ({ t })) }));
+    const j = JSON.parse(await f.text());
+    const d = j.data || j;
+    const cats = d.c || (d.categories || []).map(c => ({ n: c.name, i: (c.items || []).map(t => typeof t === 'string' ? { t } : t) }));
     if (!Array.isArray(cats)) throw 0;
-    if (confirm('Remplacer toute la liste actuelle par ce fichier ?')) { data = { c: cats }; save('Fichier importé'); renderAll(); }
-  } catch { setStatus('Fichier invalide', 'err'); }
+    if (confirm('Remplacer toute la liste actuelle par ce fichier (' + cats.reduce((a, c) => a + (c.i || []).length, 0) + ' titres) ?')) {
+      data = { c: cats }; saveData('Fichier importé'); if (j.settings) saveSettings(j.settings); renderAll();
+    }
+  } catch (err) { setStatus('Fichier invalide', 'err'); }
   e.target.value = '';
 };
+
+/* =================== Communication avec la Roku =================== */
+let saving = Promise.resolve(), pending = 0;
+function setStatus(msg, cls) { const s = $('#status'); s.textContent = msg; s.className = cls || ''; }
+const bytes = () => new TextEncoder().encode(JSON.stringify(data)).length;
+function updateSpace(prefix) {
+  const b = bytes(), pct = Math.round(b / info.max * 100);
+  $('#space').textContent = `Mémoire utilisée : ${pct} % (${(b / 1024).toFixed(1)} Ko sur ${(info.max / 1024).toFixed(1)} Ko)`;
+  $('#spaceBar').style.width = Math.min(100, pct) + '%';
+  if (prefix !== undefined) setStatus((prefix ? prefix + ' · ' : '') + 'mémoire ' + pct + ' %', pct > 100 ? 'err' : (prefix ? 'ok' : ''));
+}
+function queue(fn) { pending++; saving = saving.then(fn).catch(e => setStatus('Erreur : ' + e.message + " (l'app est-elle ouverte sur la télé ?)", 'err')).finally(() => pending--); }
+async function post(path, obj) {
+  const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(obj) });
+  const res = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(res.error || r.status);
+  return res;
+}
+function saveData(msg) {
+  if (bytes() > info.max) { setStatus('Mémoire de la Roku pleine ! Retire quelques titres.', 'err'); return; }
+  const snapshot = JSON.parse(JSON.stringify(data));
+  queue(async () => { await post('/api/data', snapshot); updateSpace(msg || 'Enregistré sur la télé'); });
+}
+function saveSettings(part) {
+  Object.assign(settings, part);
+  renderSettings(); syncFilterInputs(); renderLists();
+  queue(async () => { settings = await post('/api/settings', part); renderSettings(); syncFilterInputs(); setStatus('Réglages enregistrés', 'ok'); });
+}
+function cmd(obj, msg) { queue(async () => { await post('/api/cmd', obj); if (msg) setStatus(msg, 'ok'); }); }
+
+const canon = x => JSON.stringify(x, (k, v) => v && typeof v === 'object' && !Array.isArray(v) ? Object.keys(v).sort().reduce((o, key) => (o[key] = v[key], o), {}) : v);
+async function load(first) {
+  try {
+    const st = await (await fetch('/api/state', { cache: 'no-store' })).json();
+    if (pending) return;
+    info = st.info || info;
+    $('#ver').textContent = 'v' + (info.version || '?') + (info.url ? ' · ' + info.url : '');
+    const a = document.activeElement;
+    const typing = a && a.matches('input[type=text], textarea');
+    let changed = false;
+    if (first || canon(st.settings) !== canon(settings)) { settings = st.settings; changed = true; }
+    if (first || canon(st.history) !== canon(hist)) { hist = st.history || []; renderHistory(); renderStats(); }
+    if (first || canon(st.data) !== canon(data)) { if (typing && !first) return; data = st.data; changed = true; }
+    if (changed) renderAll();
+    if (first) updateSpace('Connecté à la télé');
+  } catch (e) { if (first) setStatus('Impossible de joindre la Roku. L\'app est-elle ouverte sur la télé ?', 'err'); }
+}
+// Reste synchro avec la télé (ex. : quand tu coches « vu » avec la télécommande)
+setInterval(() => { if (document.visibilityState === 'visible' && !$('#dlg').open) load(false); }, 4000);
+
+/* =================== Divers =================== */
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+function showDialog(html) { $('#dlgBody').innerHTML = html; const d = $('#dlg'); if (!d.open) d.showModal(); $$('[data-close]').forEach(b => b.onclick = closeDialog); }
+function closeDialog() { $('#dlg').close(); }
+$('#dlg').addEventListener('click', e => { if (e.target.id === 'dlg') closeDialog(); });
+function renderAll() {
+  fillTarget(); fillPickKey(); renderResults(); renderLists(); renderSettings(); syncFilterInputs(); renderStats(); updateSpace();
+}
+function showTab(name) {
+  $$('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === name));
+  ['search', 'lists', 'pick', 'settings'].forEach(t => $('#tab-' + t).classList.toggle('hidden', t !== name));
+  try { localStorage.setItem('tab', name); } catch (e) {}
+}
+$$('.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+$('#addCat').onclick = () => { const n = prompt('Nom de la catégorie :'); if (n && n.trim()) { data.c.push({ n: n.trim().slice(0, 40), i: [] }); saveData(); renderAll(); } };
+fillGenreSelect($('#lgenre'), 'Tous les genres');
+fillGenreSelect($('#fgenre'), 'Tous les genres');
+try { const t = localStorage.getItem('tab'); if (t) showTab(t); } catch (e) {}
 load(true);
 </script>
 </body>

@@ -1,48 +1,81 @@
+' ============================================================================
+' Écran principal : navigation, menu, synchro avec la page web
+' (voir aussi scene/Pick.brs et scene/Screens.brs)
+' ============================================================================
+
 sub init()
-    m.menu = m.top.findNode("menu")
-    m.catList = m.top.findNode("catList")
-    m.result = m.top.findNode("result")
-    m.resCat = m.top.findNode("resCat")
-    m.resTitle = m.top.findNode("resTitle")
-    m.resHint = m.top.findNode("resHint")
-    m.resPh = m.top.findNode("resPh")
-    m.resPoster = m.top.findNode("resPoster")
-    m.listView = m.top.findNode("listView")
-    m.listTitle = m.top.findNode("listTitle")
-    m.listSub = m.top.findNode("listSub")
-    m.itemList = m.top.findNode("itemList")
-    m.listPoster = m.top.findNode("listPoster")
-    m.footer = m.top.findNode("footer")
-    m.toast = m.top.findNode("toast")
-    m.rollTimer = m.top.findNode("rollTimer")
-    m.toastTimer = m.top.findNode("toastTimer")
+    m.screens = {}
+    for each id in ["menu", "result", "choices", "listView", "optView", "histView", "statsView", "playersView"]
+        m.screens[id] = m.top.findNode(id)
+    end for
+    for each id in ["accentBar", "catList", "menuInfo", "menuInfoTitle", "resCat", "resTitle", "resMeta", "resMine", "resSyn", "resPh", "resPoster", "resHint", "chTitle", "listTitle", "listSub", "itemList", "listPoster", "listInfo", "optTitle", "optSub", "optList", "histSub", "histList", "statsLeft", "statsRight", "playerName", "playerHint", "footer", "toast", "rollTimer", "toastTimer", "focusTimer", "sndTick", "sndDing"]
+        m[id] = m.top.findNode(id)
+    end for
+    m.btnR = []
+    m.btnL = []
+    m.chHi = []
+    m.chPh = []
+    m.chPo = []
+    m.chT = []
+    for i = 0 to 3
+        m.btnR.Push(m.top.findNode("btnR" + i.ToStr()))
+        m.btnL.Push(m.top.findNode("btnL" + i.ToStr()))
+    end for
+    for i = 0 to 2
+        m.chHi.Push(m.top.findNode("chHi" + i.ToStr()))
+        m.chPh.Push(m.top.findNode("chPh" + i.ToStr()))
+        m.chPo.Push(m.top.findNode("chPo" + i.ToStr()))
+        m.chT.Push(m.top.findNode("chT" + i.ToStr()))
+    end for
 
+    m.screen = "menu"
     m.rolling = false
-    m.lastPick = ""
-    m.currentIdx = 0
-    m.listIdx = 0
+    m.rollMode = ""
+    m.pickKey = 0
+    m.cur = invalid
+    m.ficheMode = "view"
+    m.ficheReturn = "menu"
+    m.btnIdx = 0
+    m.choicesList = []
+    m.chIdx = 0
+    m.listKey = 0
     m.listMap = []
-    m.final = invalid
+    m.optKind = ""
+    m.optDefs = []
+    m.menuMap = []
+    m.details = {}
+    m.tasks = {}
 
-    m.catList.observeField("itemSelected", "onCatSelected")
-    m.itemList.observeField("itemSelected", "onItemToggled")
-    m.itemList.observeField("itemFocused", "onItemFocused")
+    m.catList.observeField("itemSelected", "onMenuSelected")
+    m.catList.observeField("itemFocused", "onMenuFocused")
+    m.itemList.observeField("itemSelected", "onListSelected")
+    m.itemList.observeField("itemFocused", "onListFocused")
+    m.optList.observeField("itemSelected", "onOptSelected")
+    m.histList.observeField("itemSelected", "onHistSelected")
     m.rollTimer.observeField("fire", "onRollTick")
     m.toastTimer.observeField("fire", "onToastDone")
+    m.focusTimer.observeField("fire", "onListFocusSettled")
 
-    ' Serveur web pour éditer la liste
+    m.data = LoadData()
+    m.settings = LoadSettings()
+    m.history = LoadHistory()
+
+    ' Serveur web pour éditer la liste depuis un téléphone / PC
     m.port = 8888
     m.url = "http://" + getIp() + ":" + m.port.ToStr()
     m.footer.text = "Modifier la liste : " + m.url
     m.server = m.top.findNode("server")
     m.server.port = m.port
+    m.server.url = m.url
     m.server.observeField("dataJson", "onDataUpdated")
+    m.server.observeField("settingsJson", "onSettingsUpdated")
+    m.server.observeField("command", "onCommand")
     m.server.observeField("error", "onServerError")
     m.server.control = "RUN"
 
-    m.data = LoadData()
+    applyTheme()
     refreshMenu()
-    showMenu()
+    showScreen("menu")
 end sub
 
 function getIp() as String
@@ -53,266 +86,235 @@ function getIp() as String
     return "IP-de-la-Roku"
 end function
 
-function itemLabel(it as Object) as String
-    s = it.t
-    if IsStr(it.y) then s = s + " (" + it.y + ")"
-    return s
-end function
+' ---------- Navigation ----------
+
+sub showScreen(name as String)
+    for each k in m.screens
+        m.screens[k].visible = (LCase(k) = LCase(name))
+    end for
+    m.screen = name
+    if name = "menu" then
+        m.catList.setFocus(true)
+    else if name = "listView" then
+        m.itemList.setFocus(true)
+    else if name = "optView" then
+        m.optList.setFocus(true)
+    else if name = "histView" then
+        m.histList.setFocus(true)
+    else
+        m.screens[name].setFocus(true)
+    end if
+end sub
+
+sub goMenu()
+    stopRoll()
+    refreshMenu()
+    showScreen("menu")
+end sub
+
+' ---------- Thème ----------
+
+sub applyTheme()
+    m.accent = AccentColor(m.settings.accent)
+    m.accentBar.color = m.accent
+    for each lst in [m.catList, m.itemList, m.optList, m.histList]
+        lst.focusBitmapBlendColor = m.accent
+    end for
+    for each lbl in [m.menuInfoTitle, m.resCat, m.resPh, m.playerName]
+        lbl.color = m.accent
+    end for
+    for each hi in m.chHi
+        hi.color = m.accent
+    end for
+    updateButtons()
+end sub
+
+sub playSound(node as Object)
+    if m.settings.sound then node.control = "play"
+end sub
 
 ' ---------- Données ----------
+
+sub persist()
+    err = SaveDataJson(FormatJson(m.data))
+    if err <> "" then showToast(err)
+end sub
+
+sub persistSettings()
+    SaveSettings(m.settings)
+end sub
 
 sub onDataUpdated()
     d = SanitizeData(ParseJson(m.server.dataJson))
     if d = invalid then return
     m.data = d
-    refreshMenu()
-    if m.listView.visible then buildListView(false)
+    ' Retrouver le titre affiché dans la nouvelle liste
+    if m.cur <> invalid then
+        found = findEntry(m.cur.cat, m.cur.item.t)
+        if found <> invalid then m.cur = found
+    end if
+    if m.screen = "menu" then
+        refreshMenu()
+    else if m.screen = "listView" then
+        buildList(false)
+    else if m.screen = "result" and not m.rolling and m.cur <> invalid then
+        fillFiche()
+    else if m.screen = "statsView" then
+        showStats()
+    end if
     showToast("Liste mise à jour !")
 end sub
 
-sub persist()
-    err = SaveDataJson(FormatJson(m.data))
-    if err <> "" then showToast(err)
-    refreshMenu()
+sub onSettingsUpdated()
+    m.settings = SanitizeSettings(ParseJson(m.server.settingsJson))
+    applyTheme()
+    if m.screen = "menu" then
+        refreshMenu()
+    else if m.screen = "optView" then
+        buildOptions(false)
+    else if m.screen = "listView" then
+        buildList(false)
+    end if
+    showToast("Réglages mis à jour !")
 end sub
 
 sub onServerError()
     m.footer.text = m.server.error
 end sub
 
-' ---------- Menu des catégories ----------
+' Commandes envoyées depuis la page web
+sub onCommand()
+    cmd = m.server.command
+    if cmd = invalid then return
+    action = AnyToStr(cmd.action)
+    if action = "pick" then
+        k = ToInt(cmd.k)
+        if k < 0 or k > m.data.c.Count() then k = 0
+        stopRoll()
+        m.pickKey = k
+        startPick()
+    else if action = "show" then
+        ci = ToInt(cmd.c)
+        ii = ToInt(cmd.i)
+        if ci >= 0 and ci < m.data.c.Count() then
+            if ii >= 0 and ii < m.data.c[ci].i.Count() then
+                stopRoll()
+                showFiche({ item: m.data.c[ci].i[ii], cat: m.data.c[ci].n }, "view", "menu")
+            end if
+        end if
+    else if action = "players" then
+        stopRoll()
+        startPlayers()
+    else if action = "clearHistory" then
+        m.history = []
+        SaveHistory(m.history)
+        if m.screen = "histView" then showHistory()
+        showToast("Historique effacé")
+    else if action = "addHistory" then
+        if IsStr(cmd.t) then addHistory(cmd.t, AnyToStr(cmd.c))
+    end if
+end sub
+
+function findEntry(catName as String, title as String) as Dynamic
+    for each c in m.data.c
+        if c.n = catName then
+            for each it in c.i
+                if it.t = title then return { item: it, cat: c.n }
+            end for
+        end if
+    end for
+    ' Pas trouvé dans la catégorie : on cherche partout
+    for each c in m.data.c
+        for each it in c.i
+            if it.t = title then return { item: it, cat: c.n }
+        end for
+    end for
+    return invalid
+end function
+
+' ---------- Menu principal ----------
 
 sub refreshMenu()
-    total = 0
-    todo = 0
-    for each c in m.data.c
-        for each it in c.i
-            total = total + 1
-            if not IsWatched(it) then todo = todo + 1
-        end for
-    end for
-
     content = CreateObject("roSGNode", "ContentNode")
-    all = content.createChild("ContentNode")
-    all.title = "Surprise ! (tout mélangé)   " + todo.ToStr() + " à voir"
-    for each c in m.data.c
-        n = 0
-        for each it in c.i
-            if not IsWatched(it) then n = n + 1
-        end for
-        item = content.createChild("ContentNode")
-        item.title = c.n + "   " + n.ToStr() + " à voir / " + c.i.Count().ToStr()
+    m.menuMap = []
+    f = FiltersActive(m.settings)
+    word = " à voir"
+    if f then word = " dispo"
+
+    addMenu(content, "Surprise ! (tout mélangé)     " + countAvailable(0).ToStr() + word, { kind: "pick", k: 0 })
+    for i = 0 to m.data.c.Count() - 1
+        c = m.data.c[i]
+        addMenu(content, c.n + "     " + countAvailable(i + 1).ToStr() + word + " / " + c.i.Count().ToStr(), { kind: "pick", k: i + 1 })
     end for
+    addMenu(content, "Filtres : " + FiltersSummary(m.settings), { kind: "filters" })
+    addMenu(content, "Qui choisit ce soir ?", { kind: "players" })
+    addMenu(content, "Historique des tirages", { kind: "history" })
+    addMenu(content, "Statistiques", { kind: "stats" })
+    addMenu(content, "Paramètres", { kind: "settings" })
 
     focus = m.catList.itemFocused
     m.catList.content = content
     if focus <> invalid and focus >= 0 and focus < content.getChildCount() then m.catList.jumpToItem = focus
+    updateMenuInfo()
 end sub
 
-sub showMenu()
-    m.rollTimer.control = "stop"
-    m.rolling = false
-    m.result.visible = false
-    m.listView.visible = false
-    m.menu.visible = true
-    m.catList.setFocus(true)
+sub addMenu(content as Object, title as String, entry as Object)
+    node = content.createChild("ContentNode")
+    node.title = title
+    m.menuMap.Push(entry)
 end sub
 
-sub onCatSelected()
-    m.currentIdx = m.catList.itemSelected
-    startPick()
+sub onMenuFocused()
+    updateMenuInfo()
 end sub
 
-' ---------- Tirage au hasard ----------
-
-' Liste des titres pas encore vus : { item, cat }
-function buildPool(idx as Integer) as Object
-    pool = []
-    cats = m.data.c
-    for i = 0 to cats.Count() - 1
-        if idx = 0 or idx - 1 = i then
-            for each it in cats[i].i
-                if not IsWatched(it) then pool.Push({ item: it, cat: cats[i].n })
-            end for
-        end if
+sub updateMenuInfo()
+    total = 0
+    seen = 0
+    favs = 0
+    for each c in m.data.c
+        for each it in c.i
+            total = total + 1
+            if IsWatched(it) then seen = seen + 1
+            if IsFav(it) then favs = favs + 1
+        end for
     end for
-    return pool
+    modeTxt = "1 titre"
+    if m.settings.mode = "three" then modeTxt = "3 choix"
+    nl = Chr(10)
+    txt = "Filtres : " + FiltersSummary(m.settings) + nl
+    txt = txt + "Mode : " + modeTxt + nl + nl
+    txt = txt + plural(total - seen, "titre à voir", "titres à voir") + nl
+    txt = txt + plural(seen, "déjà vu", "déjà vus") + nl
+    txt = txt + plural(favs, "favori", "favoris") + nl
+    if m.history.Count() > 0 then txt = txt + nl + "Dernier tirage :" + nl + m.history[0].t
+    m.menuInfo.text = txt
+end sub
+
+sub onMenuSelected()
+    idx = m.catList.itemSelected
+    if idx < 0 or idx >= m.menuMap.Count() then return
+    e = m.menuMap[idx]
+    if e.kind = "pick" then
+        m.pickKey = e.k
+        startPick()
+    else if e.kind = "filters" then
+        openOptions("filters")
+    else if e.kind = "settings" then
+        openOptions("settings")
+    else if e.kind = "players" then
+        startPlayers()
+    else if e.kind = "history" then
+        showHistory()
+    else if e.kind = "stats" then
+        showStats()
+    end if
+end sub
+
+function plural(n as Integer, one as String, many as String) as String
+    if n <= 1 then return n.ToStr() + " " + one
+    return n.ToStr() + " " + many
 end function
-
-function countItems(idx as Integer) as Integer
-    n = 0
-    cats = m.data.c
-    for i = 0 to cats.Count() - 1
-        if idx = 0 or idx - 1 = i then n = n + cats[i].i.Count()
-    end for
-    return n
-end function
-
-sub startPick()
-    m.menu.visible = false
-    m.listView.visible = false
-    m.result.visible = true
-    m.result.setFocus(true)
-    m.resPoster.uri = ""
-    m.resPh.text = "?"
-    m.final = invalid
-
-    m.pool = buildPool(m.currentIdx)
-    n = m.pool.Count()
-    if n = 0 then
-        m.resCat.text = ""
-        m.resTitle.color = "0xFFFFFFFF"
-        if countItems(m.currentIdx) > 0 then
-            m.resTitle.text = "Tout a été vu !"
-            m.resHint.text = "Décoche des titres dans la liste (Droite sur le menu) ou ajoute-en sur " + m.url + Chr(10) + "Retour : catégories"
-        else
-            m.resTitle.text = "Rien ici pour l'instant !"
-            m.resHint.text = "Ajoute des titres sur " + m.url + Chr(10) + "Retour : catégories"
-        end if
-        return
-    end if
-
-    ' Tirage final (évite de retomber sur le même titre deux fois de suite)
-    pick = Rnd(n) - 1
-    tries = 0
-    while n > 1 and m.pool[pick].item.t = m.lastPick and tries < 20
-        pick = Rnd(n) - 1
-        tries = tries + 1
-    end while
-    m.final = m.pool[pick]
-
-    m.ticks = 0
-    m.rolling = true
-    m.resHint.text = ""
-    m.resTitle.color = "0x8A8AA0FF"
-    m.rollTimer.control = "start"
-end sub
-
-sub onRollTick()
-    m.ticks = m.ticks + 1
-    if m.ticks < 20 then
-        r = m.pool[Rnd(m.pool.Count()) - 1]
-        m.resCat.text = UCase(r.cat)
-        m.resTitle.text = r.item.t
-        return
-    end if
-    m.rollTimer.control = "stop"
-    m.rolling = false
-    it = m.final.item
-    m.lastPick = it.t
-    cat = UCase(m.final.cat)
-    if IsStr(it.y) then cat = cat + "   " + it.y
-    m.resCat.text = cat
-    m.resTitle.color = "0xFFFFFFFF"
-    m.resTitle.text = it.t
-    m.resPoster.uri = PosterUrl(it.p)
-    if m.resPoster.uri <> "" then m.resPh.text = "" else m.resPh.text = "?"
-    updateResultHint()
-end sub
-
-sub updateResultHint()
-    if m.final <> invalid and IsWatched(m.final.item) then
-        m.resHint.text = "Marqué comme vu  -  ne sortira plus au hasard" + Chr(10) + "OK : relancer     * : annuler « vu »     Retour : catégories"
-    else
-        m.resHint.text = "OK : relancer     * : marquer comme vu     Retour : catégories"
-    end if
-end sub
-
-sub toggleFinalWatched()
-    if m.final = invalid then return
-    it = m.final.item
-    if IsWatched(it) then
-        it.Delete("w")
-    else
-        it.w = 1
-    end if
-    persist()
-    updateResultHint()
-end sub
-
-' ---------- Liste d'une catégorie (cases « vu ») ----------
-
-sub openList(idx as Integer)
-    m.listIdx = idx
-    m.menu.visible = false
-    m.result.visible = false
-    m.listView.visible = true
-    buildListView(true)
-    m.itemList.setFocus(true)
-end sub
-
-sub buildListView(resetFocus as Boolean)
-    cats = m.data.c
-    if m.listIdx > cats.Count() then m.listIdx = 0
-    if m.listIdx = 0 then
-        m.listTitle.text = "Tout"
-    else
-        m.listTitle.text = cats[m.listIdx - 1].n
-    end if
-
-    content = CreateObject("roSGNode", "ContentNode")
-    states = []
-    m.listMap = []
-    for i = 0 to cats.Count() - 1
-        if m.listIdx = 0 or m.listIdx - 1 = i then
-            for j = 0 to cats[i].i.Count() - 1
-                it = cats[i].i[j]
-                node = content.createChild("ContentNode")
-                if m.listIdx = 0 then
-                    node.title = cats[i].n + "  -  " + itemLabel(it)
-                else
-                    node.title = itemLabel(it)
-                end if
-                states.Push(IsWatched(it))
-                m.listMap.Push([i, j])
-            end for
-        end if
-    end for
-
-    if m.listMap.Count() = 0 then
-        m.listSub.text = "Liste vide. Ajoute des titres sur " + m.url
-    else
-        m.listSub.text = "Coche ce que t'as déjà vu : ça ne sortira plus au hasard."
-    end if
-
-    focus = m.itemList.itemFocused
-    m.itemList.content = content
-    m.itemList.checkedState = states
-    if not resetFocus and focus <> invalid and focus >= 0 and focus < m.listMap.Count() then
-        m.itemList.jumpToItem = focus
-    end if
-    onItemFocused()
-end sub
-
-function listItemAt(idx as Integer) as Dynamic
-    if idx < 0 or idx >= m.listMap.Count() then return invalid
-    ref = m.listMap[idx]
-    return m.data.c[ref[0]].i[ref[1]]
-end function
-
-sub onItemFocused()
-    it = listItemAt(m.itemList.itemFocused)
-    if it = invalid then
-        m.listPoster.uri = ""
-    else
-        m.listPoster.uri = PosterUrl(it.p)
-    end if
-end sub
-
-sub onItemToggled()
-    idx = m.itemList.itemSelected
-    it = listItemAt(idx)
-    if it = invalid then return
-    if IsWatched(it) then
-        it.Delete("w")
-    else
-        it.w = 1
-    end if
-    states = m.itemList.checkedState
-    states[idx] = IsWatched(it)
-    m.itemList.checkedState = states
-    persist()
-end sub
 
 ' ---------- Petits messages ----------
 
@@ -331,27 +333,99 @@ end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
     if not press then return false
-    if m.result.visible then
-        if key = "OK" or key = "play" then
-            if not m.rolling then startPick()
-            return true
-        else if key = "options" then
-            if not m.rolling then toggleFinalWatched()
-            return true
-        else if key = "back" then
-            showMenu()
-            return true
+    s = m.screen
+
+    if m.rolling then
+        if key = "back" then
+            goMenu()
         end if
-    else if m.listView.visible then
-        if key = "back" or key = "left" then
-            showMenu()
-            return true
-        end if
-    else if m.menu.visible then
+        return true
+    end if
+
+    if s = "menu" then
         if key = "right" or key = "options" then
-            openList(m.catList.itemFocused)
+            idx = m.catList.itemFocused
+            if idx >= 0 and idx < m.menuMap.Count() and m.menuMap[idx].kind = "pick" then
+                openList(m.menuMap[idx].k)
+                return true
+            end if
+        end if
+        return false
+
+    else if s = "result" then
+        if key = "left" then
+            moveButton(-1)
+        else if key = "right" then
+            moveButton(1)
+        else if key = "OK" then
+            pressButton(m.btnIdx)
+        else if key = "options" then
+            toggleWatched()
+        else if key = "play" then
+            if m.ficheMode = "pick" then startPick()
+        else if key = "back" then
+            ficheBack()
+        else
+            return false
+        end if
+        return true
+
+    else if s = "choices" then
+        if key = "left" then
+            setChoiceFocus(m.chIdx - 1)
+        else if key = "right" then
+            setChoiceFocus(m.chIdx + 1)
+        else if key = "OK" then
+            openChoice()
+        else if key = "play" or key = "options" then
+            startPick()
+        else if key = "back" then
+            goMenu()
+        else
+            return false
+        end if
+        return true
+
+    else if s = "listView" then
+        if key = "back" or key = "left" then
+            goMenu()
+        else if key = "play" then
+            toggleListWatched()
+        else if key = "options" then
+            cycleSort()
+        else
+            return false
+        end if
+        return true
+
+    else if s = "optView" then
+        if key = "right" then
+            cycleOption(m.optList.itemFocused, 1)
+        else if key = "left" then
+            cycleOption(m.optList.itemFocused, -1)
+        else if key = "back" then
+            goMenu()
+        else
+            return false
+        end if
+        return true
+
+    else if s = "histView" or s = "statsView" then
+        if key = "back" or key = "left" then
+            goMenu()
             return true
         end if
+        return false
+
+    else if s = "playersView" then
+        if key = "OK" or key = "play" then
+            startPlayers()
+        else if key = "back" then
+            goMenu()
+        else
+            return false
+        end if
+        return true
     end if
     return false
 end function

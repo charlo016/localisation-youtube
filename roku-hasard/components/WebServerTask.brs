@@ -1,7 +1,10 @@
 ' Mini serveur HTTP qui tourne dans l'app Roku.
-' GET  /           -> page d'édition (web/index.html)
-' GET  /api/data   -> liste actuelle en JSON
-' POST /api/data   -> remplace la liste
+' GET  /               -> page d'édition (web/index.html)
+' GET  /api/state      -> { data, settings, history, info }
+' POST /api/data       -> remplace la liste
+' POST /api/settings   -> remplace les réglages
+' POST /api/cmd        -> commande pour la télé : {action:"pick", k} | {action:"show", c, i}
+'                         | {action:"clearHistory"} | {action:"addHistory", t, c} | {action:"players"}
 
 sub init()
     m.top.functionName = "runServer"
@@ -22,7 +25,8 @@ sub runServer()
         return
     end if
 
-    m.html = ReadAsciiFile("pkg:/web/index.html")
+    m.html = CreateObject("roByteArray")
+    m.html.ReadFile("pkg:/web/index.html")
     conns = {}
 
     while true
@@ -71,7 +75,7 @@ function processConn(c as Object) as Boolean
         he = findHeaderEnd(c.buf)
         if he < 0 then
             if c.buf.Count() > 16384 then
-                sendResponse(c.sock, "431 Request Header Fields Too Large", "text/plain; charset=utf-8", "En-têtes trop grands")
+                sendText(c.sock, "431 Request Header Fields Too Large", "text/plain; charset=utf-8", "En-têtes trop grands")
                 return true
             end if
             return false
@@ -90,7 +94,7 @@ function processConn(c as Object) as Boolean
             end if
         end for
         if c.clen > 65536 then
-            sendResponse(c.sock, "413 Payload Too Large", "application/json", "{" + Chr(34) + "error" + Chr(34) + ":" + Chr(34) + "Trop gros" + Chr(34) + "}")
+            sendJson(c.sock, "413 Payload Too Large", { error: "Trop gros" })
             return true
         end if
     end if
@@ -104,25 +108,60 @@ end function
 
 sub handleRequest(sock as Object, method as String, path as String, body as String)
     if method = "GET" and (path = "/" or path = "/index.html") then
-        sendResponse(sock, "200 OK", "text/html; charset=utf-8", m.html)
-    else if path = "/api/data" and method = "GET" then
-        sendResponse(sock, "200 OK", "application/json; charset=utf-8", LoadDataJson())
-    else if path = "/api/data" and method = "POST" then
+        sendBytes(sock, "200 OK", "text/html; charset=utf-8", m.html)
+
+    else if method = "GET" and path = "/api/state" then
+        state = {
+            data: LoadData()
+            settings: LoadSettings()
+            history: LoadHistory()
+            info: { version: AppVersion(), max: MaxDataBytes(), url: m.top.url }
+        }
+        sendJson(sock, "200 OK", state)
+
+    else if method = "GET" and path = "/api/data" then
+        sendJson(sock, "200 OK", LoadData())
+
+    else if method = "POST" and path = "/api/data" then
         d = SanitizeData(ParseJson(body))
         if d = invalid then
-            sendResponse(sock, "400 Bad Request", "application/json; charset=utf-8", FormatJson({ error: "Format invalide" }))
+            sendJson(sock, "400 Bad Request", { error: "Format invalide" })
             return
         end if
         json = FormatJson(d)
         err = SaveDataJson(json)
         if err <> "" then
-            sendResponse(sock, "400 Bad Request", "application/json; charset=utf-8", FormatJson({ error: err }))
+            sendJson(sock, "400 Bad Request", { error: err })
             return
         end if
         m.top.dataJson = json ' prévient l'écran
-        sendResponse(sock, "200 OK", "application/json; charset=utf-8", json)
+        sendJson(sock, "200 OK", d)
+
+    else if method = "POST" and path = "/api/settings" then
+        ' Mise à jour partielle : on part des réglages actuels
+        s = LoadSettings()
+        incoming = ParseJson(body)
+        if type(incoming) = "roAssociativeArray" then
+            for each k in incoming
+                s[k] = incoming[k]
+            end for
+        end if
+        s = SanitizeSettings(s)
+        SaveSettings(s)
+        m.top.settingsJson = FormatJson(s)
+        sendJson(sock, "200 OK", s)
+
+    else if method = "POST" and path = "/api/cmd" then
+        cmd = ParseJson(body)
+        if type(cmd) <> "roAssociativeArray" or not IsStr(cmd.action) then
+            sendJson(sock, "400 Bad Request", { error: "Commande invalide" })
+            return
+        end if
+        m.top.command = cmd
+        sendJson(sock, "200 OK", { ok: true })
+
     else
-        sendResponse(sock, "404 Not Found", "text/plain; charset=utf-8", "Introuvable")
+        sendText(sock, "404 Not Found", "text/plain; charset=utf-8", "Introuvable")
     end if
 end sub
 
@@ -143,26 +182,37 @@ function bytesToStr(ba as Object, start as Integer, length as Integer) as String
     return out.ToAsciiString()
 end function
 
-sub sendResponse(sock as Object, status as String, ctype as String, body as String)
-    crlf = Chr(13) + Chr(10)
+sub sendJson(sock as Object, status as String, obj as Object)
+    sendText(sock, status, "application/json; charset=utf-8", FormatJson(obj))
+end sub
+
+sub sendText(sock as Object, status as String, ctype as String, body as String)
     bodyBytes = CreateObject("roByteArray")
     bodyBytes.FromAsciiString(body)
+    sendBytes(sock, status, ctype, bodyBytes)
+end sub
+
+sub sendBytes(sock as Object, status as String, ctype as String, bodyBytes as Object)
+    crlf = Chr(13) + Chr(10)
     head = "HTTP/1.1 " + status + crlf
     head = head + "Content-Type: " + ctype + crlf
     head = head + "Content-Length: " + bodyBytes.Count().ToStr() + crlf
     head = head + "Cache-Control: no-store" + crlf
     head = head + "Connection: close" + crlf + crlf
-    all = CreateObject("roByteArray")
-    all.FromAsciiString(head)
-    for each b in bodyBytes
-        all.Push(b)
-    end for
+    headBytes = CreateObject("roByteArray")
+    headBytes.FromAsciiString(head)
+    sendAll(sock, headBytes)
+    sendAll(sock, bodyBytes)
+end sub
 
-    total = all.Count()
+sub sendAll(sock as Object, ba as Object)
+    total = ba.Count()
     offset = 0
     retries = 0
-    while offset < total and retries < 400
-        sent = sock.send(all, offset, total - offset)
+    while offset < total and retries < 600
+        chunk = total - offset
+        if chunk > 16384 then chunk = 16384
+        sent = sock.send(ba, offset, chunk)
         if sent > 0 then
             offset = offset + sent
             retries = 0

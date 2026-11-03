@@ -1,8 +1,8 @@
-# Film au Hasard (app Roku)
+# Film au Hasard (app Roku) — v2.0
 
-Choisis une catégorie (Films, Séries, Animés… ou « Surprise ! » pour tout mélanger)
-et l'app tire un titre au hasard dans **ta** liste. La liste se modifie depuis
-n'importe quel téléphone/PC du même Wi-Fi via une page web servie par la Roku.
+Tu choisis une catégorie (Films, Séries, Animés…) et l'app tire au hasard un titre
+de **ta** liste, avec son affiche et son résumé. La liste se gère depuis n'importe
+quel téléphone ou ordi du même Wi-Fi, grâce à une page web servie par la Roku.
 
 ## Installation (mode développeur)
 
@@ -10,45 +10,102 @@ n'importe quel téléphone/PC du même Wi-Fi via une page web servie par la Roku
    `Accueil ×3, Haut ×2, Droite, Gauche, Droite, Gauche, Droite`.
    Note l'adresse IP affichée, accepte, choisis un mot de passe (la Roku redémarre).
 2. Sur ton PC, ouvre `http://IP-DE-LA-ROKU` (utilisateur : `rokudev`, mot de passe : celui choisi).
-3. Clique **Upload**, choisis `dist/film-au-hasard.zip`, puis **Install with zip**.
+3. Clique **Upload**, choisis `dist/film-au-hasard.zip`, puis **Install with zip** (ou **Replace**).
 4. L'app se lance et apparaît dans la liste des chaînes (« Film au Hasard », tout à la fin).
 
-## Utilisation (télécommande)
+> Mise à jour depuis une ancienne version : exporte ta liste avant (onglet Réglages →
+> Exporter), au cas où. L'ancien format de liste est converti automatiquement.
 
-- **Haut/Bas + OK** : choisir une catégorie → tirage animé, avec l'affiche du titre.
-- Sur le résultat : **OK** relancer · **✱** marquer comme vu · **Retour** catégories.
-- Sur le menu : **Droite** (ou **✱**) ouvre la liste de la catégorie ;
-  **OK** coche/décoche « vu ». Les titres vus ne sortent plus au hasard.
-- Pas deux fois le même titre de suite.
+## Sur la télé
 
-## Modifier la liste
+**Menu principal**
+- **Surprise !** ou une catégorie → tirage au hasard (animation façon roue + son).
+- **Droite** ou **✱** sur une catégorie → la liste complète de cette catégorie.
+- **Filtres** → genre, durée max, époque, favoris seulement, inclure les déjà vus.
+- **Qui choisit ce soir ?** → tire au sort un prénom parmi les joueurs.
+- **Historique des tirages**, **Statistiques**, **Paramètres**.
+- À droite : résumé des filtres, du mode, des compteurs et du dernier tirage.
 
-En bas de l'écran, l'app affiche une adresse du genre `http://192.168.1.42:8888`.
-Ouvre-la sur ton téléphone/PC (même Wi-Fi). Tout s'enregistre automatiquement.
-- **Rechercher** : choisis Film / Série / Animé, tape un nom, clique **+ Ajouter**
-  (affiche et année incluses). Sources : iTunes (films), TVmaze (séries),
-  MyAnimeList via Jikan (animés). Pas besoin de compte ni de clé.
-- **Mes listes** : cocher « Vu », retirer un titre, ajouter un titre à la main,
-  renommer/réordonner/supprimer des catégories, **Exporter / Importer** (sauvegarde).
-- La page se resynchronise toute seule si tu coches des titres avec la télécommande.
+**Fiche d'un titre** (après un tirage ou depuis une liste)
+- Affiche, année, genres, durée, note publique, saisons/épisodes, résumé.
+- Boutons (Gauche/Droite + OK) : **Relancer**, **Marquer vu**, **Favori**, **Noter** (1 à 5).
+- **✱** = marquer vu, **Lecture** = relancer, **Retour** = revenir.
 
-⚠️ La page ne marche **que pendant que l'app est ouverte** sur la télé.
-La liste est stockée dans la mémoire de la Roku (limite ~15 Ko ≈ 150–250 titres avec affiches, la page affiche le % utilisé).
-Elle est effacée si tu désinstalles l'app ou installes une autre app de développement
-par-dessus → utilise **Exporter** pour la sauvegarder.
+**Mode « 3 choix »** (Paramètres) : l'app propose 3 titres côte à côte, tu choisis.
 
-## Rebâtir le zip
+**Liste d'une catégorie** : cases cochées = déjà vus. **OK** ouvre la fiche,
+**Lecture** coche/décoche « vu », **✱** change le tri (ajout, A-Z, année, ma note).
+
+**Règles du tirage**
+- Les titres déjà vus ne sortent plus (sauf si le filtre « inclure les vus » est activé).
+- Les **favoris** ont plus de chances de sortir (x2 par défaut, réglable).
+- L'app évite de retomber sur les **derniers titres tirés** (5 par défaut, réglable).
+
+**Paramètres** : mode de tirage, animation (normale / rapide / aucune), anti-répétition,
+chances des favoris, résumé affiché ou non, sons, couleur de l'app (6 au choix),
+tri des listes, boutique iTunes utilisée, effacer l'historique.
+
+## Sur la page web
+
+L'adresse est affichée en bas de l'écran de la télé, par exemple `http://192.168.1.42:8888`.
+Tout s'enregistre automatiquement et la télé se met à jour tout de suite (et inversement).
+
+- **🔍 Rechercher** : Film / Série / Animé, tape un nom, **+ Ajouter**. L'affiche,
+  l'année, les genres et la durée sont ajoutés automatiquement. Clique sur une affiche
+  pour lire le résumé (et « Ajouter comme déjà vu »). Doublons détectés.
+  Sources sans compte ni clé : iTunes (films), TVmaze (séries), MyAnimeList via Jikan (animés).
+- **📋 Mes listes** : recherche, filtres (à voir / vus / favoris / genre), tri ;
+  étoiles, ♥ favori, case « Vu », retirer ; clic sur un titre → fiche avec résumé,
+  **Afficher sur la télé**, déplacer vers une autre catégorie.
+  Par catégorie : 📺 tirer sur la télé, renommer, réordonner, **ajouter plusieurs
+  titres d'un coup** (un par ligne), tout remettre « à voir », supprimer les vus.
+- **🎲 Tirage** : tirer ici (dans le navigateur) ou **sur la télé**, avec les mêmes
+  filtres ; « Qui choisit ce soir ? » ; statistiques ; historique des tirages.
+- **⚙️ Réglages** : tous les paramètres de la télé, couleur, prénoms des joueurs,
+  mémoire utilisée, **Exporter / Importer** (sauvegarde), réglages par défaut, tout effacer.
+
+## Limites à connaître
+
+- La page web ne marche **que pendant que l'app est ouverte** sur la télé.
+- La mémoire d'une app Roku est petite (~16 Ko pour tout) : environ **150 à 200 titres**.
+  La page affiche le pourcentage utilisé. Les films ne gardent que leur numéro iTunes
+  (l'affiche est retrouvée à l'affichage) pour économiser de la place.
+- Les résumés viennent des bases publiques : souvent **en anglais**. Pour les films,
+  choisis la boutique iTunes « France » dans les paramètres pour avoir des titres
+  et résumés en français.
+- La liste est effacée si l'app est désinstallée ou remplacée par une autre app de
+  développement → **Exporter** de temps en temps.
+
+## Développement
 
 ```sh
-./package.sh          # -> dist/film-au-hasard.zip
+./package.sh             # -> dist/film-au-hasard.zip
 python3 make_images.py   # (optionnel) régénère icônes/splash, nécessite Pillow
 ```
 
-## Structure
+L'app a été testée dans le simulateur [brs-engine](https://github.com/lvcabral/brs-engine)
+(`npx brs-cli dist/film-au-hasard.zip -e` puis télécommande simulée via ECP sur le port 8060,
+page web sur le port 8888).
+
+### Structure
 
 - `manifest` – infos de l'app
 - `source/main.brs` – point d'entrée
-- `components/MainScene.*` – écrans (catégories + tirage)
-- `components/WebServerTask.*` – mini serveur HTTP (port 8888)
-- `components/Data.brs` – lecture/écriture/validation de la liste
-- `web/index.html` – page d'édition
+- `components/MainScene.xml` – tous les écrans
+- `components/MainScene.brs` – navigation, menu, télécommande, synchro avec la page web
+- `components/scene/Pick.brs` – tirage (filtres, favoris, anti-répétition, 3 choix, joueurs)
+- `components/scene/Screens.brs` – fiche, liste, filtres/paramètres, historique, stats
+- `components/Data.brs` – format de la liste, réglages, filtres, genres, registre
+- `components/DetailsTask.*` – récupère affiche/résumé/note sur Internet
+- `components/WebServerTask.*` – mini serveur HTTP (port 8888) + API
+- `web/index.html` – la page web
+- `fonts/` – police Inter (licence SIL OFL), `sounds/` – petits sons
+
+### API de la page web
+
+| Méthode | Chemin | Rôle |
+|---|---|---|
+| GET | `/api/state` | liste + réglages + historique + infos |
+| POST | `/api/data` | remplace la liste |
+| POST | `/api/settings` | met à jour des réglages (partiel accepté) |
+| POST | `/api/cmd` | `{action:"pick",k}`, `{action:"show",c,i}`, `{action:"players"}`, `{action:"clearHistory"}`, `{action:"addHistory",t,c}` |
