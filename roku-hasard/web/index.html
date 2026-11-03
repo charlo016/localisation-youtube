@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Film au Hasard – Ma liste</title>
+<style>
+  :root { --bg:#14141f; --card:#1f1f2e; --line:#33334a; --text:#eeeef6; --dim:#9a9ab0; --accent:#ffc94d; --ok:#7cffa0; --err:#ff7c7c; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding:20px 16px 8px; max-width:900px; margin:auto; }
+  h1 { margin:0; font-size:26px; }
+  header p { margin:4px 0 0; color:var(--dim); }
+  main { max-width:900px; margin:auto; padding:8px 16px 120px; display:grid; gap:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .row { display:flex; gap:8px; align-items:center; }
+  .name { flex:1; min-width:0; width:100%; font-size:18px; font-weight:600; background:transparent; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
+  textarea { width:100%; min-height:160px; margin-top:10px; background:#17172a; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; resize:vertical; }
+  .count { color:var(--dim); font-size:13px; margin-top:6px; }
+  button { font:inherit; border:0; border-radius:8px; padding:9px 14px; cursor:pointer; background:#2c2c44; color:var(--text); }
+  button:hover { filter:brightness(1.15); }
+  .primary { background:var(--accent); color:#14141f; font-weight:700; }
+  .danger { background:transparent; color:var(--err); border:1px solid #5a2c35; }
+  .icon { padding:8px 11px; }
+  .bar { position:fixed; left:0; right:0; bottom:0; background:#101019ee; border-top:1px solid var(--line); padding:12px 16px; }
+  .bar .inner { max-width:900px; margin:auto; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  #status { flex:1; min-width:140px; font-size:14px; color:var(--dim); }
+  #status.ok { color:var(--ok); } #status.err { color:var(--err); }
+  .tools { display:flex; gap:8px; flex-wrap:wrap; }
+  .size { font-size:13px; color:var(--dim); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Film au Hasard</h1>
+  <p>Un titre par ligne. Clique « Enregistrer » et la télé se met à jour tout de suite.</p>
+</header>
+<main id="cats"></main>
+<div class="bar"><div class="inner">
+  <span id="status">Chargement…</span>
+  <div class="tools">
+    <button id="add">+ Catégorie</button>
+    <button id="export" title="Sauvegarder la liste dans un fichier">Exporter</button>
+    <button id="import" title="Charger une liste depuis un fichier">Importer</button>
+    <button id="save" class="primary">Enregistrer</button>
+  </div>
+  <input id="file" type="file" accept=".json,application/json" hidden>
+</div></div>
+
+<script>
+const MAX = 15000;
+const $ = s => document.querySelector(s);
+const catsEl = $('#cats');
+let dirty = false;
+
+function setStatus(msg, cls) { const s = $('#status'); s.textContent = msg; s.className = cls || ''; }
+
+function linesOf(text) { return text.split('\n').map(l => l.trim()).filter(Boolean); }
+
+function collect() {
+  return { categories: [...catsEl.querySelectorAll('.card')].map(card => ({
+    name: card.querySelector('.name').value.trim(),
+    items: linesOf(card.querySelector('textarea').value)
+  })).filter(c => c.name) };
+}
+
+function updateCounts() {
+  catsEl.querySelectorAll('.card').forEach(card => {
+    const n = linesOf(card.querySelector('textarea').value).length;
+    card.querySelector('.count').textContent = n + ' titre' + (n > 1 ? 's' : '');
+  });
+  const bytes = new TextEncoder().encode(JSON.stringify(collect())).length;
+  const pct = Math.round(bytes / MAX * 100);
+  if (dirty) setStatus('Modifications non enregistrées · espace utilisé ' + pct + ' %', pct > 100 ? 'err' : '');
+}
+
+function addCard(cat, focus) {
+  const card = document.createElement('section');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="row">
+      <input class="name" placeholder="Nom de la catégorie" maxlength="40">
+      <button class="icon up" title="Monter">↑</button>
+      <button class="icon down" title="Descendre">↓</button>
+      <button class="icon danger del" title="Supprimer">✕</button>
+    </div>
+    <textarea placeholder="Un titre par ligne…"></textarea>
+    <div class="count"></div>`;
+  card.querySelector('.name').value = cat.name || '';
+  card.querySelector('textarea').value = (cat.items || []).join('\n');
+  card.querySelector('.del').onclick = () => {
+    if (confirm('Supprimer la catégorie « ' + (card.querySelector('.name').value || 'sans nom') + ' » ?')) { card.remove(); markDirty(); }
+  };
+  card.querySelector('.up').onclick = () => { if (card.previousElementSibling) { catsEl.insertBefore(card, card.previousElementSibling); markDirty(); } };
+  card.querySelector('.down').onclick = () => { if (card.nextElementSibling) { catsEl.insertBefore(card.nextElementSibling, card); markDirty(); } };
+  card.addEventListener('input', markDirty);
+  catsEl.appendChild(card);
+  if (focus) card.querySelector('.name').focus();
+}
+
+function render(data) {
+  catsEl.innerHTML = '';
+  (data.categories || []).forEach(c => addCard(c));
+  dirty = false;
+  updateCounts();
+}
+
+function markDirty() { dirty = true; updateCounts(); }
+
+async function load() {
+  try {
+    const r = await fetch('/api/data', { cache: 'no-store' });
+    render(await r.json());
+    setStatus('Liste chargée depuis la télé', 'ok');
+  } catch (e) { setStatus('Impossible de joindre la Roku. L\'app est-elle ouverte ?', 'err'); }
+}
+
+async function save() {
+  const data = collect();
+  const body = JSON.stringify(data);
+  if (new TextEncoder().encode(body).length > MAX) { setStatus('Liste trop grande pour la Roku (max ~15 Ko). Enlève quelques titres.', 'err'); return; }
+  setStatus('Enregistrement…');
+  try {
+    const r = await fetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+    const res = await r.json();
+    if (!r.ok) throw new Error(res.error || r.status);
+    render(res);
+    setStatus('Enregistré ! La télé est à jour.', 'ok');
+  } catch (e) { setStatus('Erreur : ' + e.message, 'err'); }
+}
+
+$('#add').onclick = () => { addCard({ name: '', items: [] }, true); markDirty(); };
+$('#save').onclick = save;
+$('#export').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(collect(), null, 2)], { type: 'application/json' }));
+  a.download = 'film-au-hasard.json';
+  a.click();
+};
+$('#import').onclick = () => $('#file').click();
+$('#file').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { render(JSON.parse(await f.text())); dirty = true; updateCounts(); setStatus('Fichier importé. Clique « Enregistrer » pour l\'envoyer à la télé.'); }
+  catch { setStatus('Fichier invalide', 'err'); }
+  e.target.value = '';
+};
+window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); save(); } });
+load();
+</script>
+</body>
+</html>

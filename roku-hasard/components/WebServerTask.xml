@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="WebServerTask" extends="Task">
+    <interface>
+        <field id="port" type="integer" value="8888" />
+        <!-- Mis à jour à chaque sauvegarde depuis la page web -->
+        <field id="dataJson" type="string" />
+        <field id="error" type="string" />
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/Data.brs" />
+    <script type="text/brightscript" uri="pkg:/components/WebServerTask.brs" />
+</component>

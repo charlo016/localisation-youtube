@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="MainScene" extends="Scene">
+    <script type="text/brightscript" uri="pkg:/components/Data.brs" />
+    <script type="text/brightscript" uri="pkg:/components/MainScene.brs" />
+    <children>
+        <Rectangle id="bg" width="1920" height="1080" color="0x14141FFF" />
+        <Rectangle id="accentBar" width="12" height="1080" color="0xFFC94DFF" />
+
+        <!-- Écran 1 : choix de la catégorie -->
+        <Group id="menu">
+            <Label id="appTitle" translation="[120, 70]" text="Qu'est-ce qu'on regarde ?" color="0xFFFFFFFF">
+                <Font role="font" uri="font:BoldSystemFontFile" size="68" />
+            </Label>
+            <Label id="appSub" translation="[120, 160]" text="Choisis une catégorie, je tire un titre au hasard" color="0x9A9AB0FF">
+                <Font role="font" uri="font:SystemFontFile" size="34" />
+            </Label>
+            <LabelList
+                id="catList"
+                translation="[120, 250]"
+                itemSize="[1000, 82]"
+                itemSpacing="[0, 10]"
+                numRows="8"
+                vertFocusAnimationStyle="floatingFocus"
+                color="0xDDDDEEFF"
+                focusedColor="0x14141FFF"
+                focusBitmapBlendColor="0xFFC94DFF">
+                <Font role="font" uri="font:SystemFontFile" size="42" />
+                <Font role="focusedFont" uri="font:BoldSystemFontFile" size="42" />
+            </LabelList>
+        </Group>
+
+        <!-- Écran 2 : le résultat -->
+        <Group id="result" visible="false">
+            <Label id="resCat" translation="[120, 260]" width="1680" horizAlign="center" color="0xFFC94DFF">
+                <Font role="font" uri="font:BoldSystemFontFile" size="44" />
+            </Label>
+            <Label id="resTitle" translation="[120, 340]" width="1680" height="380" horizAlign="center" vertAlign="center" wrap="true" maxLines="3" color="0xFFFFFFFF">
+                <Font role="font" uri="font:BoldSystemFontFile" size="96" />
+            </Label>
+            <Label id="resHint" translation="[120, 780]" width="1680" horizAlign="center" color="0x9A9AB0FF">
+                <Font role="font" uri="font:SystemFontFile" size="34" />
+            </Label>
+        </Group>
+
+        <Label id="footer" translation="[120, 975]" color="0x7FD3FFFF">
+            <Font role="font" uri="font:SystemFontFile" size="32" />
+        </Label>
+        <Label id="toast" translation="[1200, 975]" width="600" horizAlign="right" color="0x7CFFA0FF" visible="false">
+            <Font role="font" uri="font:BoldSystemFontFile" size="32" />
+        </Label>
+
+        <Timer id="rollTimer" duration="0.07" repeat="true" />
+        <Timer id="toastTimer" duration="3" repeat="false" />
+        <WebServerTask id="server" />
+    </children>
+</component>
