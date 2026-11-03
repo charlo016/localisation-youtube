@@ -8,18 +8,18 @@
 
         <!-- Écran 1 : choix de la catégorie -->
         <Group id="menu">
-            <Label id="appTitle" translation="[120, 70]" text="Qu'est-ce qu'on regarde ?" color="0xFFFFFFFF">
+            <Label translation="[120, 70]" text="Qu'est-ce qu'on regarde ?" color="0xFFFFFFFF">
                 <Font role="font" uri="font:BoldSystemFontFile" size="68" />
             </Label>
-            <Label id="appSub" translation="[120, 160]" text="Choisis une catégorie, je tire un titre au hasard" color="0x9A9AB0FF">
+            <Label translation="[120, 160]" text="Choisis une catégorie, je tire un titre au hasard" color="0x9A9AB0FF">
                 <Font role="font" uri="font:SystemFontFile" size="34" />
             </Label>
             <LabelList
                 id="catList"
                 translation="[120, 250]"
-                itemSize="[1000, 82]"
+                itemSize="[1100, 82]"
                 itemSpacing="[0, 10]"
-                numRows="8"
+                numRows="7"
                 vertFocusAnimationStyle="floatingFocus"
                 color="0xDDDDEEFF"
                 focusedColor="0x14141FFF"
@@ -27,25 +27,65 @@
                 <Font role="font" uri="font:SystemFontFile" size="42" />
                 <Font role="focusedFont" uri="font:BoldSystemFontFile" size="42" />
             </LabelList>
+            <Label translation="[120, 905]" text="OK : tirage au hasard        Droite ou * : voir la liste / cocher les vus" color="0x9A9AB0FF">
+                <Font role="font" uri="font:SystemFontFile" size="30" />
+            </Label>
         </Group>
 
         <!-- Écran 2 : le résultat -->
         <Group id="result" visible="false">
-            <Label id="resCat" translation="[120, 260]" width="1680" horizAlign="center" color="0xFFC94DFF">
-                <Font role="font" uri="font:BoldSystemFontFile" size="44" />
+            <Rectangle translation="[180, 150]" width="520" height="780" color="0x1F1F2EFF" />
+            <Label id="resPh" translation="[180, 150]" width="520" height="780" horizAlign="center" vertAlign="center" text="?" color="0xFFC94DFF">
+                <Font role="font" uri="font:BoldSystemFontFile" size="220" />
             </Label>
-            <Label id="resTitle" translation="[120, 340]" width="1680" height="380" horizAlign="center" vertAlign="center" wrap="true" maxLines="3" color="0xFFFFFFFF">
-                <Font role="font" uri="font:BoldSystemFontFile" size="96" />
+            <Poster id="resPoster" translation="[180, 150]" width="520" height="780" loadWidth="520" loadHeight="780" loadDisplayMode="scaleToFit" />
+            <Label id="resCat" translation="[800, 300]" width="980" color="0xFFC94DFF">
+                <Font role="font" uri="font:BoldSystemFontFile" size="40" />
             </Label>
-            <Label id="resHint" translation="[120, 780]" width="1680" horizAlign="center" color="0x9A9AB0FF">
-                <Font role="font" uri="font:SystemFontFile" size="34" />
+            <Label id="resTitle" translation="[800, 360]" width="980" height="380" vertAlign="center" wrap="true" maxLines="3" color="0xFFFFFFFF">
+                <Font role="font" uri="font:BoldSystemFontFile" size="84" />
+            </Label>
+            <Label id="resHint" translation="[800, 790]" width="980" wrap="true" color="0x9A9AB0FF">
+                <Font role="font" uri="font:SystemFontFile" size="32" />
+            </Label>
+        </Group>
+
+        <!-- Écran 3 : la liste d'une catégorie, avec cases « vu » -->
+        <Group id="listView" visible="false">
+            <Label id="listTitle" translation="[120, 70]" color="0xFFFFFFFF">
+                <Font role="font" uri="font:BoldSystemFontFile" size="64" />
+            </Label>
+            <Label id="listSub" translation="[120, 155]" width="1100" color="0x9A9AB0FF">
+                <Font role="font" uri="font:SystemFontFile" size="32" />
+            </Label>
+            <CheckList
+                id="itemList"
+                translation="[120, 230]"
+                itemSize="[1050, 70]"
+                itemSpacing="[0, 6]"
+                numRows="9"
+                checkOnSelect="false"
+                vertFocusAnimationStyle="floatingFocus"
+                color="0xDDDDEEFF"
+                focusedColor="0x14141FFF"
+                focusBitmapBlendColor="0xFFC94DFF">
+                <Font role="font" uri="font:SystemFontFile" size="36" />
+                <Font role="focusedFont" uri="font:BoldSystemFontFile" size="36" />
+            </CheckList>
+            <Rectangle translation="[1340, 200]" width="440" height="660" color="0x1F1F2EFF" />
+            <Label translation="[1340, 200]" width="440" height="660" horizAlign="center" vertAlign="center" text="?" color="0x33334AFF">
+                <Font role="font" uri="font:BoldSystemFontFile" size="180" />
+            </Label>
+            <Poster id="listPoster" translation="[1340, 200]" width="440" height="660" loadWidth="440" loadHeight="660" loadDisplayMode="scaleToFit" />
+            <Label translation="[120, 905]" text="OK : cocher / décocher « vu »        Retour : catégories" color="0x9A9AB0FF">
+                <Font role="font" uri="font:SystemFontFile" size="30" />
             </Label>
         </Group>
 
         <Label id="footer" translation="[120, 975]" color="0x7FD3FFFF">
             <Font role="font" uri="font:SystemFontFile" size="32" />
         </Label>
-        <Label id="toast" translation="[1200, 975]" width="600" horizAlign="right" color="0x7CFFA0FF" visible="false">
+        <Label id="toast" translation="[1000, 975]" width="800" horizAlign="right" color="0x7CFFA0FF" visible="false">
             <Font role="font" uri="font:BoldSystemFontFile" size="32" />
         </Label>
 

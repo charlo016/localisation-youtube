@@ -13,23 +13,27 @@ n'importe quel téléphone/PC du même Wi-Fi via une page web servie par la Roku
 3. Clique **Upload**, choisis `dist/film-au-hasard.zip`, puis **Install with zip**.
 4. L'app se lance et apparaît dans la liste des chaînes (« Film au Hasard », tout à la fin).
 
-## Utilisation
+## Utilisation (télécommande)
 
-- **Haut/Bas + OK** : choisir une catégorie → tirage animé.
-- **OK** : relancer · **Retour** : revenir aux catégories.
+- **Haut/Bas + OK** : choisir une catégorie → tirage animé, avec l'affiche du titre.
+- Sur le résultat : **OK** relancer · **✱** marquer comme vu · **Retour** catégories.
+- Sur le menu : **Droite** (ou **✱**) ouvre la liste de la catégorie ;
+  **OK** coche/décoche « vu ». Les titres vus ne sortent plus au hasard.
 - Pas deux fois le même titre de suite.
 
 ## Modifier la liste
 
 En bas de l'écran, l'app affiche une adresse du genre `http://192.168.1.42:8888`.
-Ouvre-la sur ton téléphone/PC (même Wi-Fi) :
-- un bloc par catégorie, **un titre par ligne** ;
-- `+ Catégorie`, ↑ ↓ pour réordonner, ✕ pour supprimer ;
-- **Enregistrer** → la télé se met à jour instantanément ;
-- **Exporter / Importer** pour garder une copie de sauvegarde (conseillé).
+Ouvre-la sur ton téléphone/PC (même Wi-Fi). Tout s'enregistre automatiquement.
+- **Rechercher** : choisis Film / Série / Animé, tape un nom, clique **+ Ajouter**
+  (affiche et année incluses). Sources : iTunes (films), TVmaze (séries),
+  MyAnimeList via Jikan (animés). Pas besoin de compte ni de clé.
+- **Mes listes** : cocher « Vu », retirer un titre, ajouter un titre à la main,
+  renommer/réordonner/supprimer des catégories, **Exporter / Importer** (sauvegarde).
+- La page se resynchronise toute seule si tu coches des titres avec la télécommande.
 
 ⚠️ La page ne marche **que pendant que l'app est ouverte** sur la télé.
-La liste est stockée dans la mémoire de la Roku (limite ~15 Ko ≈ 500–700 titres).
+La liste est stockée dans la mémoire de la Roku (limite ~15 Ko ≈ 150–250 titres avec affiches, la page affiche le % utilisé).
 Elle est effacée si tu désinstalles l'app ou installes une autre app de développement
 par-dessus → utilise **Exporter** pour la sauvegarder.
 

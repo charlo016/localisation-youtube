@@ -3,150 +3,321 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Film au Hasard – Ma liste</title>
+<title>Film au Hasard</title>
 <style>
   :root { --bg:#14141f; --card:#1f1f2e; --line:#33334a; --text:#eeeef6; --dim:#9a9ab0; --accent:#ffc94d; --ok:#7cffa0; --err:#ff7c7c; }
-  * { box-sizing: border-box; }
+  * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--text); font:16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  header { padding:20px 16px 8px; max-width:900px; margin:auto; }
-  h1 { margin:0; font-size:26px; }
-  header p { margin:4px 0 0; color:var(--dim); }
-  main { max-width:900px; margin:auto; padding:8px 16px 120px; display:grid; gap:14px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
-  .row { display:flex; gap:8px; align-items:center; }
-  .name { flex:1; min-width:0; width:100%; font-size:18px; font-weight:600; background:transparent; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
-  textarea { width:100%; min-height:160px; margin-top:10px; background:#17172a; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; resize:vertical; }
-  .count { color:var(--dim); font-size:13px; margin-top:6px; }
+  .wrap { max-width:1000px; margin:auto; padding:0 16px; }
+  header { padding:18px 0 0; }
+  h1 { margin:0; font-size:24px; }
+  .tabs { display:flex; gap:6px; margin:14px 0 16px; border-bottom:1px solid var(--line); }
+  .tabs button { background:none; border-radius:8px 8px 0 0; padding:10px 16px; color:var(--dim); font-weight:600; border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--text); border-bottom-color:var(--accent); }
   button { font:inherit; border:0; border-radius:8px; padding:9px 14px; cursor:pointer; background:#2c2c44; color:var(--text); }
-  button:hover { filter:brightness(1.15); }
+  button:hover:not(:disabled) { filter:brightness(1.15); }
+  button:disabled { opacity:.55; cursor:default; }
   .primary { background:var(--accent); color:#14141f; font-weight:700; }
   .danger { background:transparent; color:var(--err); border:1px solid #5a2c35; }
-  .icon { padding:8px 11px; }
-  .bar { position:fixed; left:0; right:0; bottom:0; background:#101019ee; border-top:1px solid var(--line); padding:12px 16px; }
-  .bar .inner { max-width:900px; margin:auto; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  #status { flex:1; min-width:140px; font-size:14px; color:var(--dim); }
+  .icon { padding:7px 11px; }
+  input[type=text], input[type=search], select { font:inherit; background:#17172a; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:9px 11px; min-width:0; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .grow { flex:1; }
+  .seg { display:inline-flex; background:#17172a; border:1px solid var(--line); border-radius:10px; padding:3px; }
+  .seg button { background:none; padding:7px 14px; color:var(--dim); }
+  .seg button.on { background:var(--accent); color:#14141f; font-weight:700; }
+  .hint { color:var(--dim); font-size:14px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:14px; margin-top:16px; }
+  .res { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }
+  .poster { aspect-ratio:2/3; width:100%; object-fit:cover; background:#26263a; display:block; }
+  .ph { aspect-ratio:2/3; display:grid; place-items:center; background:#26263a; color:#4a4a66; font-size:48px; font-weight:800; }
+  .res .info { padding:8px 10px; flex:1; display:flex; flex-direction:column; gap:6px; }
+  .res .t { font-weight:600; font-size:14px; }
+  .res .y { color:var(--dim); font-size:13px; }
+  .res button { margin-top:auto; padding:7px 10px; font-size:14px; }
+  .added { background:#1f3a2a !important; color:var(--ok); }
+  .cat { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:14px; }
+  .cat .name { flex:1; font-size:18px; font-weight:700; }
+  .cnt { color:var(--dim); font-size:13px; }
+  .items { list-style:none; margin:10px 0; padding:0; display:grid; gap:6px; }
+  .item { display:flex; gap:10px; align-items:center; padding:6px; border-radius:8px; background:#17172a; }
+  .item img, .item .mini { width:36px; height:54px; border-radius:4px; object-fit:cover; background:#26263a; flex:none; }
+  .item .lbl { flex:1; min-width:0; overflow-wrap:anywhere; }
+  .item.seen .lbl { color:var(--dim); text-decoration:line-through; }
+  .item label { display:flex; gap:6px; align-items:center; color:var(--dim); font-size:14px; cursor:pointer; white-space:nowrap; }
+  .item input[type=checkbox] { width:20px; height:20px; accent-color:var(--accent); }
+  .bar { position:sticky; bottom:0; background:#101019ee; border-top:1px solid var(--line); padding:10px 0; margin-top:20px; }
+  #status { font-size:14px; color:var(--dim); }
   #status.ok { color:var(--ok); } #status.err { color:var(--err); }
-  .tools { display:flex; gap:8px; flex-wrap:wrap; }
-  .size { font-size:13px; color:var(--dim); }
+  .hidden { display:none !important; }
+  main { padding-bottom:20px; min-height:60vh; }
 </style>
 </head>
 <body>
-<header>
-  <h1>Film au Hasard</h1>
-  <p>Un titre par ligne. Clique « Enregistrer » et la télé se met à jour tout de suite.</p>
-</header>
-<main id="cats"></main>
-<div class="bar"><div class="inner">
-  <span id="status">Chargement…</span>
-  <div class="tools">
-    <button id="add">+ Catégorie</button>
-    <button id="export" title="Sauvegarder la liste dans un fichier">Exporter</button>
-    <button id="import" title="Charger une liste depuis un fichier">Importer</button>
-    <button id="save" class="primary">Enregistrer</button>
-  </div>
-  <input id="file" type="file" accept=".json,application/json" hidden>
-</div></div>
+<div class="wrap">
+  <header>
+    <h1>Film au Hasard</h1>
+    <nav class="tabs">
+      <button data-tab="search" class="on">Rechercher</button>
+      <button data-tab="lists">Mes listes</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Onglet recherche -->
+    <section id="tab-search">
+      <div class="row">
+        <div class="seg" id="types">
+          <button data-type="movie" class="on">Film</button>
+          <button data-type="tv">Série</button>
+          <button data-type="anime">Animé</button>
+        </div>
+        <span class="hint">Ajouter dans :</span>
+        <select id="target"></select>
+      </div>
+      <form id="sform" class="row" style="margin-top:10px">
+        <input id="q" type="search" class="grow" placeholder="Nom du film…" autocomplete="off">
+        <button class="primary">Chercher</button>
+      </form>
+      <div id="sinfo" class="hint" style="margin-top:10px"></div>
+      <div id="results" class="grid"></div>
+    </section>
+
+    <!-- Onglet listes -->
+    <section id="tab-lists" class="hidden">
+      <div id="cats"></div>
+      <div class="row">
+        <button id="addCat">+ Nouvelle catégorie</button>
+        <button id="export">Exporter (sauvegarde)</button>
+        <button id="import">Importer</button>
+        <input id="file" type="file" accept=".json,application/json" hidden>
+      </div>
+    </section>
+  </main>
+
+  <div class="bar"><span id="status">Chargement…</span></div>
+</div>
 
 <script>
 const MAX = 15000;
 const $ = s => document.querySelector(s);
-const catsEl = $('#cats');
-let dirty = false;
+let data = { c: [] };
+let type = 'movie';
+let lastResults = [];
+const targetByType = {};
 
-function setStatus(msg, cls) { const s = $('#status'); s.textContent = msg; s.className = cls || ''; }
-
-function linesOf(text) { return text.split('\n').map(l => l.trim()).filter(Boolean); }
-
-function collect() {
-  return { categories: [...catsEl.querySelectorAll('.card')].map(card => ({
-    name: card.querySelector('.name').value.trim(),
-    items: linesOf(card.querySelector('textarea').value)
-  })).filter(c => c.name) };
+/* ---------- Affiches : codes courts pour économiser la mémoire de la Roku ---------- */
+function compactImg(u) {
+  if (!u) return '';
+  let m;
+  if ((m = u.match(/^https:\/\/cdn\.myanimelist\.net\/images\/anime\/(\d+\/\d+)\.jpg/))) return 'm:' + m[1];
+  if ((m = u.match(/^https?:\/\/static\.tvmaze\.com\/uploads\/images\/[a-z_]+\/(.+)$/))) return 't:' + m[1];
+  if ((m = u.match(/^https:\/\/is(\d)-ssl\.mzstatic\.com\/image\/thumb\/(.+)\/[^/]+$/))) return 'i:' + m[1] + '/' + m[2];
+  return u;
+}
+function imgUrl(p) {
+  if (!p) return '';
+  const pre = p.slice(0, 2), rest = p.slice(2);
+  if (pre === 'm:') return 'https://cdn.myanimelist.net/images/anime/' + rest + '.jpg';
+  if (pre === 't:') return 'https://static.tvmaze.com/uploads/images/medium_portrait/' + rest;
+  if (pre === 'i:') { const i = rest.indexOf('/'); return 'https://is' + rest.slice(0, i) + '-ssl.mzstatic.com/image/thumb/' + rest.slice(i + 1) + '/200x300bb.jpg'; }
+  return p;
 }
 
-function updateCounts() {
-  catsEl.querySelectorAll('.card').forEach(card => {
-    const n = linesOf(card.querySelector('textarea').value).length;
-    card.querySelector('.count').textContent = n + ' titre' + (n > 1 ? 's' : '');
+/* ---------- Recherche ---------- */
+const SOURCES = {
+  movie: { label: 'Nom du film…', async search(q) {
+    const r = await fetch('https://itunes.apple.com/search?media=movie&entity=movie&limit=30&term=' + encodeURIComponent(q));
+    const d = await r.json(); const seen = new Set();
+    return d.results.map(x => ({ t: x.trackName, y: (x.releaseDate || '').slice(0, 4), p: compactImg(x.artworkUrl100) }))
+      .filter(x => { const k = x.t + x.y; if (seen.has(k)) return false; seen.add(k); return true; });
+  }},
+  tv: { label: 'Nom de la série…', async search(q) {
+    const r = await fetch('https://api.tvmaze.com/search/shows?q=' + encodeURIComponent(q));
+    return (await r.json()).map(({ show: s }) => ({ t: s.name, y: (s.premiered || '').slice(0, 4), p: compactImg(s.image && (s.image.original || s.image.medium)) }));
+  }},
+  anime: { label: 'Nom de l\'animé…', async search(q) {
+    const r = await fetch('https://api.jikan.moe/v4/anime?sfw=true&limit=24&q=' + encodeURIComponent(q));
+    return (await r.json()).data.map(a => ({ t: a.title_english || a.title, alt: a.title_english && a.title !== a.title_english ? a.title : '', y: String(a.year || (a.aired && a.aired.from || '').slice(0, 4) || ''), p: compactImg(a.images && a.images.jpg && a.images.jpg.image_url) }));
+  }},
+};
+
+const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+function defaultTarget(t) {
+  const key = { movie: 'film', tv: 'serie', anime: 'anim' }[t];
+  const i = data.c.findIndex(c => norm(c.n).includes(key));
+  return i >= 0 ? i : 0;
+}
+function fillTarget() {
+  const sel = $('#target'), cur = targetByType[type];
+  sel.innerHTML = data.c.map((c, i) => `<option value="${i}">${esc(c.n)}</option>`).join('') + '<option value="new">+ Nouvelle catégorie…</option>';
+  sel.value = cur != null && cur < data.c.length ? cur : defaultTarget(type);
+}
+$('#target').onchange = e => {
+  if (e.target.value === 'new') {
+    const n = prompt('Nom de la nouvelle catégorie :');
+    if (n && n.trim()) { data.c.push({ n: n.trim().slice(0, 40), i: [] }); targetByType[type] = data.c.length - 1; save(); renderAll(); }
+    else fillTarget();
+  } else targetByType[type] = +e.target.value;
+  renderResults();
+};
+
+document.querySelectorAll('#types button').forEach(b => b.onclick = () => {
+  type = b.dataset.type;
+  document.querySelectorAll('#types button').forEach(x => x.classList.toggle('on', x === b));
+  $('#q').placeholder = SOURCES[type].label;
+  lastResults = []; renderResults(); $('#sinfo').textContent = '';
+  fillTarget();
+  if ($('#q').value.trim()) doSearch();
+});
+
+$('#sform').onsubmit = e => { e.preventDefault(); doSearch(); };
+async function doSearch() {
+  const q = $('#q').value.trim(); if (!q) return;
+  $('#sinfo').textContent = 'Recherche…';
+  try {
+    lastResults = await SOURCES[type].search(q);
+    $('#sinfo').textContent = lastResults.length ? lastResults.length + ' résultat(s)' : 'Aucun résultat. Essaie le titre en anglais ?';
+  } catch (err) {
+    lastResults = [];
+    $('#sinfo').textContent = 'La recherche a échoué (connexion Internet ?). Tu peux quand même ajouter un titre à la main dans « Mes listes ».';
+  }
+  renderResults();
+}
+
+function inCat(ci, t) { const c = data.c[ci]; return !!c && c.i.some(x => norm(x.t) === norm(t)); }
+
+function renderResults() {
+  const ci = +$('#target').value;
+  $('#results').innerHTML = '';
+  lastResults.forEach(r => {
+    const el = document.createElement('div');
+    el.className = 'res';
+    const has = inCat(ci, r.t);
+    el.innerHTML = (r.p ? `<img class="poster" loading="lazy" src="${esc(imgUrl(r.p))}" alt="">` : '<div class="ph">?</div>') +
+      `<div class="info"><div class="t">${esc(r.t)}</div>${r.alt ? `<div class="y">${esc(r.alt)}</div>` : ''}<div class="y">${esc(r.y || '')}</div>
+       <button class="${has ? 'added' : 'primary'}" ${has ? 'disabled' : ''}>${has ? '✓ Dans la liste' : '+ Ajouter'}</button></div>`;
+    el.querySelector('button').onclick = () => {
+      if (!data.c.length) data.c.push({ n: { movie: 'Films', tv: 'Séries', anime: 'Animés' }[type], i: [] });
+      const target = data.c[+$('#target').value] || data.c[0];
+      const item = { t: r.t.slice(0, 120) };
+      if (r.y) item.y = r.y.slice(0, 4);
+      if (r.p) item.p = r.p;
+      target.i.push(item);
+      save('« ' + r.t + ' » ajouté à ' + target.n);
+      renderAll();
+    };
+    $('#results').appendChild(el);
   });
-  const bytes = new TextEncoder().encode(JSON.stringify(collect())).length;
-  const pct = Math.round(bytes / MAX * 100);
-  if (dirty) setStatus('Modifications non enregistrées · espace utilisé ' + pct + ' %', pct > 100 ? 'err' : '');
 }
 
-function addCard(cat, focus) {
-  const card = document.createElement('section');
-  card.className = 'card';
-  card.innerHTML = `
-    <div class="row">
-      <input class="name" placeholder="Nom de la catégorie" maxlength="40">
-      <button class="icon up" title="Monter">↑</button>
-      <button class="icon down" title="Descendre">↓</button>
-      <button class="icon danger del" title="Supprimer">✕</button>
-    </div>
-    <textarea placeholder="Un titre par ligne…"></textarea>
-    <div class="count"></div>`;
-  card.querySelector('.name').value = cat.name || '';
-  card.querySelector('textarea').value = (cat.items || []).join('\n');
-  card.querySelector('.del').onclick = () => {
-    if (confirm('Supprimer la catégorie « ' + (card.querySelector('.name').value || 'sans nom') + ' » ?')) { card.remove(); markDirty(); }
-  };
-  card.querySelector('.up').onclick = () => { if (card.previousElementSibling) { catsEl.insertBefore(card, card.previousElementSibling); markDirty(); } };
-  card.querySelector('.down').onclick = () => { if (card.nextElementSibling) { catsEl.insertBefore(card.nextElementSibling, card); markDirty(); } };
-  card.addEventListener('input', markDirty);
-  catsEl.appendChild(card);
-  if (focus) card.querySelector('.name').focus();
+/* ---------- Mes listes ---------- */
+function renderLists() {
+  const root = $('#cats'); root.innerHTML = '';
+  data.c.forEach((c, ci) => {
+    const todo = c.i.filter(x => !x.w).length;
+    const box = document.createElement('div'); box.className = 'cat';
+    box.innerHTML = `
+      <div class="row">
+        <input type="text" class="name" maxlength="40">
+        <span class="cnt">${todo} à voir / ${c.i.length}</span>
+        <button class="icon up" title="Monter">↑</button>
+        <button class="icon down" title="Descendre">↓</button>
+        <button class="icon danger del" title="Supprimer la catégorie">✕</button>
+      </div>
+      <ul class="items"></ul>
+      <form class="row add"><input type="text" class="grow" placeholder="Ajouter un titre à la main…" maxlength="120"><button>Ajouter</button></form>`;
+    const name = box.querySelector('.name'); name.value = c.n;
+    name.onchange = () => { const v = name.value.trim(); if (v) { c.n = v; save(); fillTarget(); } else name.value = c.n; };
+    box.querySelector('.up').onclick = () => { if (ci > 0) { [data.c[ci - 1], data.c[ci]] = [data.c[ci], data.c[ci - 1]]; save(); renderAll(); } };
+    box.querySelector('.down').onclick = () => { if (ci < data.c.length - 1) { [data.c[ci + 1], data.c[ci]] = [data.c[ci], data.c[ci + 1]]; save(); renderAll(); } };
+    box.querySelector('.del').onclick = () => { if (confirm('Supprimer « ' + c.n + ' » et ses ' + c.i.length + ' titres ?')) { data.c.splice(ci, 1); save(); renderAll(); } };
+    box.querySelector('.add').onsubmit = e => {
+      e.preventDefault(); const inp = e.target.querySelector('input'); const t = inp.value.trim();
+      if (t) { c.i.push({ t }); save(); renderAll(); }
+    };
+    const ul = box.querySelector('.items');
+    c.i.forEach((it, ii) => {
+      const li = document.createElement('li'); li.className = 'item' + (it.w ? ' seen' : '');
+      li.innerHTML = (it.p ? `<img loading="lazy" src="${esc(imgUrl(it.p))}" alt="">` : '<div class="mini"></div>') +
+        `<span class="lbl">${esc(it.t)}${it.y ? ' <span class="cnt">(' + esc(it.y) + ')</span>' : ''}</span>
+         <label><input type="checkbox" ${it.w ? 'checked' : ''}> Vu</label>
+         <button class="icon danger" title="Retirer">✕</button>`;
+      li.querySelector('input').onchange = e => { if (e.target.checked) it.w = 1; else delete it.w; save(); renderAll(); };
+      li.querySelector('button').onclick = () => { c.i.splice(ii, 1); save(); renderAll(); };
+      ul.appendChild(li);
+    });
+    root.appendChild(box);
+  });
 }
 
-function render(data) {
-  catsEl.innerHTML = '';
-  (data.categories || []).forEach(c => addCard(c));
-  dirty = false;
-  updateCounts();
+function renderAll() { fillTarget(); renderResults(); renderLists(); updateSpace(); }
+
+/* ---------- Communication avec la Roku ---------- */
+let saving = Promise.resolve(), pending = 0;
+function setStatus(msg, cls) { const s = $('#status'); s.textContent = msg; s.className = cls || ''; }
+function bytes() { return new TextEncoder().encode(JSON.stringify(data)).length; }
+function updateSpace(prefix) {
+  const pct = Math.round(bytes() / MAX * 100);
+  setStatus((prefix ? prefix + ' · ' : '') + 'mémoire utilisée ' + pct + ' %', pct > 100 ? 'err' : (prefix ? 'ok' : ''));
 }
-
-function markDirty() { dirty = true; updateCounts(); }
-
-async function load() {
+function save(msg) {
+  if (bytes() > MAX) { setStatus('Mémoire de la Roku pleine ! Retire quelques titres (ou leurs affiches).', 'err'); return; }
+  pending++;
+  const body = JSON.stringify(data);
+  saving = saving.then(async () => {
+    try {
+      const r = await fetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+      const res = await r.json();
+      if (!r.ok) throw new Error(res.error || r.status);
+      updateSpace(msg || 'Enregistré sur la télé');
+    } catch (e) { setStatus('Erreur : ' + e.message + ' (l\'app est-elle ouverte sur la télé ?)', 'err'); }
+    finally { pending--; }
+  });
+}
+const canon = d => JSON.stringify(d.c.map(c => [c.n, c.i.map(x => [x.t, x.y || '', x.p || '', x.w ? 1 : 0])]));
+async function load(first) {
   try {
     const r = await fetch('/api/data', { cache: 'no-store' });
-    render(await r.json());
-    setStatus('Liste chargée depuis la télé', 'ok');
-  } catch (e) { setStatus('Impossible de joindre la Roku. L\'app est-elle ouverte ?', 'err'); }
+    const d = await r.json();
+    if (pending) return;
+    if (first || canon(d) !== canon(data)) {
+      const a = document.activeElement;
+      if (!first && a && a.matches('#tab-lists input[type=text]')) return; // ne pas déranger pendant la saisie
+      data = d; renderAll();
+      if (first) updateSpace('Liste chargée depuis la télé');
+    }
+  } catch (e) { if (first) setStatus('Impossible de joindre la Roku. L\'app est-elle ouverte ?', 'err'); }
 }
+// Reste synchro avec la télé (ex. : quand tu coches « vu » avec la télécommande)
+setInterval(() => { if (document.visibilityState === 'visible') load(false); }, 4000);
 
-async function save() {
-  const data = collect();
-  const body = JSON.stringify(data);
-  if (new TextEncoder().encode(body).length > MAX) { setStatus('Liste trop grande pour la Roku (max ~15 Ko). Enlève quelques titres.', 'err'); return; }
-  setStatus('Enregistrement…');
-  try {
-    const r = await fetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-    const res = await r.json();
-    if (!r.ok) throw new Error(res.error || r.status);
-    render(res);
-    setStatus('Enregistré ! La télé est à jour.', 'ok');
-  } catch (e) { setStatus('Erreur : ' + e.message, 'err'); }
-}
+/* ---------- Divers ---------- */
+function esc(s) { return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
 
-$('#add').onclick = () => { addCard({ name: '', items: [] }, true); markDirty(); };
-$('#save').onclick = save;
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  $('#tab-search').classList.toggle('hidden', b.dataset.tab !== 'search');
+  $('#tab-lists').classList.toggle('hidden', b.dataset.tab !== 'lists');
+});
+$('#addCat').onclick = () => { const n = prompt('Nom de la catégorie :'); if (n && n.trim()) { data.c.push({ n: n.trim().slice(0, 40), i: [] }); save(); renderAll(); } };
 $('#export').onclick = () => {
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(collect(), null, 2)], { type: 'application/json' }));
-  a.download = 'film-au-hasard.json';
-  a.click();
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }));
+  a.download = 'film-au-hasard.json'; a.click();
 };
 $('#import').onclick = () => $('#file').click();
 $('#file').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
-  try { render(JSON.parse(await f.text())); dirty = true; updateCounts(); setStatus('Fichier importé. Clique « Enregistrer » pour l\'envoyer à la télé.'); }
-  catch { setStatus('Fichier invalide', 'err'); }
+  try {
+    const d = JSON.parse(await f.text());
+    const cats = d.c || (d.categories || []).map(c => ({ n: c.name, i: (c.items || []).map(t => ({ t })) }));
+    if (!Array.isArray(cats)) throw 0;
+    if (confirm('Remplacer toute la liste actuelle par ce fichier ?')) { data = { c: cats }; save('Fichier importé'); renderAll(); }
+  } catch { setStatus('Fichier invalide', 'err'); }
   e.target.value = '';
 };
-window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
-document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); save(); } });
-load();
+load(true);
 </script>
 </body>
 </html>
