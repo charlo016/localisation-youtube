@@ -10,6 +10,9 @@
 
         <!-- ===================== Menu principal ===================== -->
         <Group id="menu">
+            <Label id="brand" translation="[1290, 95]" width="510" horizAlign="right" text="What2Watch" color="0xFFC94DFF">
+                <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="56" />
+            </Label>
             <Label translation="[120, 60]" text="Qu'est-ce qu'on regarde ?" color="0xFFFFFFFF">
                 <Font role="font" uri="pkg:/fonts/Inter-Bold.ttf" size="68" />
             </Label>

@@ -1,4 +1,4 @@
-# Film au Hasard (app Roku) — v2.0
+# What2Watch (app Roku) — v2.1
 
 Tu choisis une catégorie (Films, Séries, Animés…) et l'app tire au hasard un titre
 de **ta** liste, avec son affiche et son résumé. La liste se gère depuis n'importe
@@ -10,8 +10,8 @@ quel téléphone ou ordi du même Wi-Fi, grâce à une page web servie par la Ro
    `Accueil ×3, Haut ×2, Droite, Gauche, Droite, Gauche, Droite`.
    Note l'adresse IP affichée, accepte, choisis un mot de passe (la Roku redémarre).
 2. Sur ton PC, ouvre `http://IP-DE-LA-ROKU` (utilisateur : `rokudev`, mot de passe : celui choisi).
-3. Clique **Upload**, choisis `dist/film-au-hasard.zip`, puis **Install with zip** (ou **Replace**).
-4. L'app se lance et apparaît dans la liste des chaînes (« Film au Hasard », tout à la fin).
+3. Clique **Upload**, choisis `dist/what2watch.zip`, puis **Install with zip** (ou **Replace**).
+4. L'app se lance et apparaît dans la liste des chaînes (« What2Watch », tout à la fin).
 
 > Mise à jour depuis une ancienne version : exporte ta liste avant (onglet Réglages →
 > Exporter), au cas où. L'ancien format de liste est converti automatiquement.
@@ -64,6 +64,16 @@ Tout s'enregistre automatiquement et la télé se met à jour tout de suite (et 
 - **⚙️ Réglages** : tous les paramètres de la télé, couleur, prénoms des joueurs,
   mémoire utilisée, **Exporter / Importer** (sauvegarde), réglages par défaut, tout effacer.
 
+## Les affiches
+
+- Un titre ajouté avec l'onglet **Rechercher** a automatiquement son affiche et son résumé.
+- Un titre ajouté **à la main** (ou les titres d'exemple) n'en a pas : dans **Mes listes**,
+  clique sur **🖼️ Trouver les affiches** (le bandeau apparaît s'il en manque). L'app cherche
+  dans les films, séries ou animés selon le nom de la catégorie.
+- Mauvais film trouvé ? Ouvre le titre → **🖼️ Changer l'affiche** et choisis le bon.
+- Sur la télé, l'affiche est chargée depuis Internet au moment de l'afficher : il faut
+  que la Roku soit connectée à Internet.
+
 ## Limites à connaître
 
 - La page web ne marche **que pendant que l'app est ouverte** sur la télé.
@@ -79,12 +89,12 @@ Tout s'enregistre automatiquement et la télé se met à jour tout de suite (et 
 ## Développement
 
 ```sh
-./package.sh             # -> dist/film-au-hasard.zip
+./package.sh             # -> dist/what2watch.zip
 python3 make_images.py   # (optionnel) régénère icônes/splash, nécessite Pillow
 ```
 
 L'app a été testée dans le simulateur [brs-engine](https://github.com/lvcabral/brs-engine)
-(`npx brs-cli dist/film-au-hasard.zip -e` puis télécommande simulée via ECP sur le port 8060,
+(`npx brs-cli dist/what2watch.zip -e` puis télécommande simulée via ECP sur le port 8060,
 page web sur le port 8888).
 
 ### Structure

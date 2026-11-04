@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14141f">
-<title>Film au Hasard</title>
+<title>What2Watch</title>
 <style>
   :root { --bg:#14141f; --card:#1f1f2e; --card2:#17172a; --line:#33334a; --text:#eeeef6; --dim:#9a9ab0; --accent:#ffc94d; --ok:#7cffa0; --err:#ff7c7c; --fav:#ff6fb5; }
   * { box-sizing:border-box; }
@@ -112,7 +112,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>🎲 Film au Hasard</h1>
+    <h1>🎲 What2Watch</h1>
     <span class="ver" id="ver"></span>
   </header>
   <nav class="tabs">
@@ -159,6 +159,10 @@
           <option value="year">Année (récent)</option>
           <option value="rating">Ma note</option>
         </select>
+      </div>
+      <div id="missingBox" class="card hidden" style="margin-bottom:14px">
+        <div class="row"><span class="grow" id="missingTxt"></span><button id="findPosters" class="primary">🖼️ Trouver les affiches</button></div>
+        <div class="hint" style="margin-top:6px">L'app cherche chaque titre dans la bonne base (films, séries ou animés selon le nom de la catégorie) et ajoute l'affiche, le résumé, les genres et la durée. Si elle se trompe de film, ouvre le titre → « Changer l'affiche ».</div>
       </div>
       <div id="cats"></div>
       <div class="row">
@@ -564,19 +568,108 @@ async function openItemDialog(ci, ii) {
             <button class="heart ${it.f ? 'on' : ''}">♥</button>
             <label class="vu"><input type="checkbox" ${it.w ? 'checked' : ''}> Déjà vu</label></div>
         </div></div>
-      <p class="syn">${it.s ? (det ? esc(det.syn || 'Pas de résumé.') : 'Chargement du résumé…') : 'Titre ajouté à la main : pas de résumé.'}</p>
+      <p class="syn">${it.s ? (det ? esc(det.syn || 'Pas de résumé.') : 'Chargement du résumé…') : "Pas encore d'affiche ni de résumé : clique sur « Choisir l'affiche »."}</p>
       <div class="row">
         <button class="primary" id="dTv">📺 Afficher sur la télé</button>
+        <button id="dPoster">🖼️ ${it.s || it.p ? "Changer l'affiche" : "Choisir l'affiche"}</button>
         <select id="dMove"><option value="">Déplacer vers…</option>${data.c.map((x, i) => i === ci ? '' : `<option value="${i}">${esc(x.n)}</option>`).join('')}</select>
         <button class="danger" id="dDel">Retirer</button>
       </div>`);
     bindItemControls($('#dlgBody'), it, () => { renderAll(); draw(det); });
     $('#dTv').onclick = () => cmd({ action: 'show', c: ci, i: ii }, 'Affiché sur la télé 📺');
+    $('#dPoster').onclick = () => openPosterPicker(ci, ii);
     $('#dMove').onchange = e => { const to = +e.target.value; if (e.target.value === '') return; c.i.splice(ii, 1); data.c[to].i.push(it); saveData('Déplacé vers ' + data.c[to].n); closeDialog(); renderAll(); };
     $('#dDel').onclick = () => { if (confirm('Retirer « ' + it.t + ' » ?')) { c.i.splice(ii, 1); saveData(); closeDialog(); renderAll(); } };
   };
   draw(detailsCache[it.s]);
   if (it.s && !detailsCache[it.s]) { const det = await fetchDetails(it.s); if ($('#dlg').open) draw(det || { syn: 'Résumé indisponible.' }); }
+}
+
+/* =================== Affiches manquantes =================== */
+// Type de recherche selon le nom de la catégorie
+function catType(c) {
+  const n = norm(c.n);
+  if (n.includes('anim')) return 'anime';
+  if (n.includes('serie') || n.includes('tele') || n.includes('show') || /\btv\b/.test(n)) return 'tv';
+  return 'movie';
+}
+const searchTitle = t => t.replace(/\(\s*\d{4}\s*\)/g, '').trim();
+function missingList() {
+  const out = [];
+  data.c.forEach(c => c.i.forEach(it => { if (!it.s && !it.p) out.push({ c, it }); }));
+  return out;
+}
+function updateMissing() {
+  const n = missingList().length;
+  $('#missingBox').classList.toggle('hidden', n === 0);
+  $('#missingTxt').textContent = n + (n > 1 ? " titres n'ont" : " titre n'a") + " pas encore d'affiche.";
+}
+function bestMatch(results, it) {
+  if (!results.length) return null;
+  const t = norm(searchTitle(it.t));
+  const same = results.filter(r => norm(r.t) === t || (r.alt && norm(r.alt) === t));
+  const cands = same.length ? same : results;
+  if (it.y) { const y = cands.find(r => r.y === it.y); if (y) return y; }
+  return cands[0];
+}
+function applyMatch(it, r) {
+  it.s = r.s;
+  if (r.p) it.p = r.p; else delete it.p;
+  if (!it.y && r.y) it.y = r.y.slice(0, 4);
+  if (r.g) it.g = r.g;
+  if (r.d) it.d = r.d;
+  if (r.s && r.s.startsWith('i:') && r.img) { posterCache[r.s] = r.img; try { localStorage.setItem('posters', JSON.stringify(posterCache)); } catch (e) {} }
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+$('#findPosters').onclick = async () => {
+  const list = missingList(); if (!list.length) return;
+  const btn = $('#findPosters'); btn.disabled = true;
+  let found = 0, i = 0;
+  pending++; // pas de resynchro pendant la recherche
+  try {
+    for (const { c, it } of list) {
+      i++; setStatus('Recherche des affiches… ' + i + ' / ' + list.length);
+      try {
+        const r = bestMatch(await SOURCES[catType(c)].search(searchTitle(it.t)), it);
+        if (r) { applyMatch(it, r); found++; }
+      } catch (e) {}
+      await sleep(catType(c) === 'anime' ? 450 : 250); // l'API des animés limite à 3 requêtes/seconde
+    }
+  } finally { pending--; btn.disabled = false; }
+  saveData(found + ' affiche(s) trouvée(s) sur ' + list.length);
+  renderAll();
+};
+function openPosterPicker(ci, ii) {
+  const c = data.c[ci], it = c.i[ii];
+  let ptype = catType(c);
+  showDialog(`<button class="close icon ghost" data-close>✕</button>
+    <h3>Affiche de « ${esc(it.t)} »</h3>
+    <div class="row"><div class="seg" id="ptypes">
+      <button data-type="movie">Film</button><button data-type="tv">Série</button><button data-type="anime">Animé</button></div></div>
+    <form id="pkform" class="row" style="margin-top:10px"><input id="pkq" type="search" class="grow"><button class="primary">Chercher</button></form>
+    <div id="pkinfo" class="hint" style="margin-top:8px"></div>
+    <div id="pkres" class="grid"></div>
+    <div class="row" style="margin-top:12px"><button id="pkback" class="ghost">← Retour à la fiche</button></div>`);
+  $('#pkq').value = searchTitle(it.t);
+  const setType = t => { ptype = t; $$('#ptypes button').forEach(b => b.classList.toggle('on', b.dataset.type === t)); };
+  const go = async () => {
+    $('#pkinfo').textContent = 'Recherche…'; $('#pkres').innerHTML = '';
+    let res = [];
+    try { res = await SOURCES[ptype].search($('#pkq').value.trim()); }
+    catch (e) { $('#pkinfo').textContent = 'La recherche a échoué (Internet ?).'; return; }
+    $('#pkinfo').textContent = res.length ? 'Clique sur le bon titre :' : 'Aucun résultat. Essaie le titre original ou en anglais.';
+    res.forEach(r => {
+      const el = document.createElement('div'); el.className = 'res'; el.style.cursor = 'pointer';
+      el.innerHTML = (r.img ? `<img class="poster" loading="lazy" src="${esc(r.img)}" alt="">` : '<div class="ph">?</div>') +
+        `<div class="info"><div class="t">${esc(r.t)}</div><div class="meta">${esc(metaLine(r))}</div></div>`;
+      el.onclick = () => { applyMatch(it, r); delete detailsCache[it.s]; saveData('Affiche de « ' + it.t + ' » mise à jour'); renderAll(); openItemDialog(ci, ii); };
+      $('#pkres').appendChild(el);
+    });
+  };
+  $$('#ptypes button').forEach(b => b.onclick = () => { setType(b.dataset.type); go(); });
+  $('#pkback').onclick = () => openItemDialog(ci, ii);
+  $('#pkform').onsubmit = e => { e.preventDefault(); go(); };
+  setType(ptype); go();
 }
 
 /* =================== Tirage =================== */
@@ -711,8 +804,8 @@ $('#resetSettings').onclick = () => { if (confirm('Remettre tous les réglages p
 $('#wipe').onclick = () => { if (confirm('Effacer TOUTE la liste ? (pense à exporter avant)') && confirm('Vraiment sûr ?')) { data = { c: [{ n: 'Films', i: [] }, { n: 'Séries', i: [] }, { n: 'Animés', i: [] }] }; saveData('Liste effacée'); renderAll(); } };
 $('#export').onclick = () => {
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify({ app: 'film-au-hasard', version: info.version, date: new Date().toISOString(), data, settings }, null, 1)], { type: 'application/json' }));
-  a.download = 'film-au-hasard-' + new Date().toISOString().slice(0, 10) + '.json'; a.click();
+  a.href = URL.createObjectURL(new Blob([JSON.stringify({ app: 'what2watch', version: info.version, date: new Date().toISOString(), data, settings }, null, 1)], { type: 'application/json' }));
+  a.download = 'what2watch-' + new Date().toISOString().slice(0, 10) + '.json'; a.click();
 };
 $('#import').onclick = () => $('#file').click();
 $('#file').onchange = async e => {
@@ -784,7 +877,7 @@ function showDialog(html) { $('#dlgBody').innerHTML = html; const d = $('#dlg');
 function closeDialog() { $('#dlg').close(); }
 $('#dlg').addEventListener('click', e => { if (e.target.id === 'dlg') closeDialog(); });
 function renderAll() {
-  fillTarget(); fillPickKey(); renderResults(); renderLists(); renderSettings(); syncFilterInputs(); renderStats(); updateSpace();
+  updateMissing(); fillTarget(); fillPickKey(); renderResults(); renderLists(); renderSettings(); syncFilterInputs(); renderStats(); updateSpace();
 }
 function showTab(name) {
   $$('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === name));

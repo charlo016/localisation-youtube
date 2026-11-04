@@ -13,7 +13,7 @@
 ' }
 
 function AppVersion() as String
-    return "2.0"
+    return "2.1"
 end function
 
 function DefaultData() as Object

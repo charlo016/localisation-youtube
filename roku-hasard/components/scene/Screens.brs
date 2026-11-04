@@ -22,7 +22,7 @@ sub fillFiche()
     det = invalid
     if IsStr(it.s) then
         det = m.details[it.s]
-        if det = invalid then requestDetails(it.s)
+        if det = invalid or not det.ok then requestDetails(it.s)
     end if
 
     head = UCase(m.cur.cat)
@@ -57,7 +57,7 @@ sub fillFiche()
     else if IsStr(it.s) then
         m.resSyn.text = "Chargement du résumé..."
     else
-        m.resSyn.text = "Pas de résumé : titre ajouté à la main. Ajoute-le depuis l'onglet Rechercher de la page web pour avoir l'affiche et le résumé."
+        m.resSyn.text = "Pas encore d'affiche ni de résumé pour ce titre. Sur la page web : onglet « Mes listes », bouton « Trouver les affiches »."
     end if
 
     url = posterFor(it)
@@ -217,14 +217,20 @@ function posterFor(it as Object) as String
     if IsStr(it.p) and it.p <> "" then return PosterUrl(it.p)
     if IsStr(it.s) then
         det = m.details[it.s]
+        if det = invalid or not det.ok then requestDetails(it.s)
         if det <> invalid then return det.poster
-        requestDetails(it.s)
     end if
     return ""
 end function
 
 sub requestDetails(ref as String)
-    if m.details.DoesExist(ref) or m.tasks.DoesExist(ref) then return
+    if m.tasks.DoesExist(ref) then return
+    det = m.details[ref]
+    if det <> invalid then
+        if det.ok then return
+        ' Échec précédent (Internet ?) : on réessaie, mais pas plus d'une fois toutes les 20 s
+        if UpTime(0) - det.at < 20 then return
+    end if
     t = CreateObject("roSGNode", "DetailsTask")
     t.ref = ref
     t.country = m.settings.country
@@ -240,6 +246,7 @@ sub onDetails(event as Object)
     if not res.ok then
         res.synopsis = "Résumé indisponible (pas d'Internet ?)"
     end if
+    res.at = UpTime(0)
     m.details[res.ref] = res
 
     if m.screen = "result" and m.cur <> invalid and IsStr(m.cur.item.s) and m.cur.item.s = res.ref then

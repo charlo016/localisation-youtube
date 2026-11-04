@@ -8,7 +8,7 @@ sub init()
     for each id in ["menu", "result", "choices", "listView", "optView", "histView", "statsView", "playersView"]
         m.screens[id] = m.top.findNode(id)
     end for
-    for each id in ["accentBar", "catList", "menuInfo", "menuInfoTitle", "resCat", "resTitle", "resMeta", "resMine", "resSyn", "resPh", "resPoster", "resHint", "chTitle", "listTitle", "listSub", "itemList", "listPoster", "listInfo", "optTitle", "optSub", "optList", "histSub", "histList", "statsLeft", "statsRight", "playerName", "playerHint", "footer", "toast", "rollTimer", "toastTimer", "focusTimer", "sndTick", "sndDing"]
+    for each id in ["accentBar", "brand", "catList", "menuInfo", "menuInfoTitle", "resCat", "resTitle", "resMeta", "resMine", "resSyn", "resPh", "resPoster", "resHint", "chTitle", "listTitle", "listSub", "itemList", "listPoster", "listInfo", "optTitle", "optSub", "optList", "histSub", "histList", "statsLeft", "statsRight", "playerName", "playerHint", "footer", "toast", "rollTimer", "toastTimer", "focusTimer", "sndTick", "sndDing"]
         m[id] = m.top.findNode(id)
     end for
     m.btnR = []
@@ -120,7 +120,7 @@ sub applyTheme()
     for each lst in [m.catList, m.itemList, m.optList, m.histList]
         lst.focusBitmapBlendColor = m.accent
     end for
-    for each lbl in [m.menuInfoTitle, m.resCat, m.resPh, m.playerName]
+    for each lbl in [m.brand, m.menuInfoTitle, m.resCat, m.resPh, m.playerName]
         lbl.color = m.accent
     end for
     for each hi in m.chHi

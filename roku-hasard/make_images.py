@@ -16,7 +16,7 @@ def die(d, cx, cy, s):
 def make(w, h, path, title_size, sub=None):
     im = Image.new("RGB", (w, h), BG); d = ImageDraw.Draw(im)
     s = int(h * 0.38); die(d, w // 2, int(h * 0.36), s)
-    f = font(title_size); t = "Film au Hasard"
+    f = font(title_size); t = "What2Watch"
     tw = d.textlength(t, font=f); d.text(((w - tw) / 2, int(h * 0.62)), t, font=f, fill=FG)
     if sub:
         f2 = font(title_size // 2, False); sw = d.textlength(sub, font=f2)
