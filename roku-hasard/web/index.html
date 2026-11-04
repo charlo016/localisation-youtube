@@ -264,7 +264,7 @@ const targetByType = {};
 /* =================== Genres (mêmes codes que sur la Roku) =================== */
 const GENRES = [['A','Action'],['V','Aventure'],['C','Comédie'],['D','Drame'],['H','Horreur'],['T','Thriller'],['S','Science-fiction'],['F','Fantastique'],['R','Romance'],['P','Policier'],['M','Mystère'],['N','Animation'],['O','Documentaire'],['Y','Famille'],['U','Musique'],['G','Histoire / Guerre'],['W','Western'],['L','Sport'],['K','Tranche de vie']];
 const GNAME = Object.fromEntries(GENRES);
-const GMAP = [[/action/i,'A'],[/advent|aventure/i,'V'],[/com[eé]d/i,'C'],[/drama|drame/i,'D'],[/horror|horreur/i,'H'],[/thriller|suspense/i,'T'],[/sci-?fi|science/i,'S'],[/fantas|supernatural|surnaturel/i,'F'],[/romance|romanti/i,'R'],[/crime|polic/i,'P'],[/myst/i,'M'],[/^animation$|^anime$/i,'N'],[/documentar/i,'O'],[/family|famil|kids|children|enfant|jeunesse/i,'Y'],[/music/i,'U'],[/\bwar\b|histor|guerre|military/i,'G'],[/western/i,'W'],[/sport/i,'L'],[/slice of life/i,'K']];
+const GMAP = [[/action|superhero/i,'A'],[/advent|aventure/i,'V'],[/com[eé]d/i,'C'],[/drama|drame/i,'D'],[/horror|horreur/i,'H'],[/thriller|suspense/i,'T'],[/sci-?fi|science/i,'S'],[/fantas|supernatural|surnaturel/i,'F'],[/romance|romanti/i,'R'],[/crime|polic/i,'P'],[/myst/i,'M'],[/^animation$|^anime$|animated/i,'N'],[/documentar/i,'O'],[/family|famil|kids|children|enfant|jeunesse/i,'Y'],[/music/i,'U'],[/\bwar\b|histor|guerre|military/i,'G'],[/western/i,'W'],[/sport/i,'L'],[/slice of life/i,'K']];
 function mapGenres(names) {
   let out = '';
   for (const n of names || []) for (const [re, k] of GMAP) if (re.test(n) && !out.includes(k)) out += k;
@@ -281,6 +281,8 @@ function compactImg(u) {
   if ((m = u.match(/^https:\/\/cdn\.myanimelist\.net\/images\/anime\/(\d+\/\d+)\.jpg/))) return 'm:' + m[1];
   if ((m = u.match(/^https?:\/\/static\.tvmaze\.com\/uploads\/images\/[a-z_]+\/(.+)$/))) return 't:' + m[1];
   if ((m = u.match(/^https:\/\/is(\d)-ssl\.mzstatic\.com\/image\/thumb\/(.+)\/[^/]+$/))) return 'i:' + m[1] + '/' + m[2];
+  if ((m = u.match(/^https:\/\/m\.media-amazon\.com\/images\/M\/([^./]+)\./))) return 'b:' + m[1];
+  if ((m = u.match(/^https:\/\/s4\.anilist\.co\/file\/anilistcdn\/media\/anime\/cover\/[a-z]+\/(.+)$/))) return 'a:' + m[1];
   return u;
 }
 function imgUrl(p) {
@@ -289,6 +291,8 @@ function imgUrl(p) {
   if (pre === 'm:') return 'https://cdn.myanimelist.net/images/anime/' + rest + '.jpg';
   if (pre === 't:') return 'https://static.tvmaze.com/uploads/images/medium_portrait/' + rest;
   if (pre === 'i:') { const i = rest.indexOf('/'); return 'https://is' + rest.slice(0, i) + '-ssl.mzstatic.com/image/thumb/' + rest.slice(i + 1) + '/200x300bb.jpg'; }
+  if (pre === 'b:') return 'https://m.media-amazon.com/images/M/' + rest + '._V1_SX300.jpg';
+  if (pre === 'a:') return 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/' + rest;
   return p;
 }
 const itunesArt = (u, size) => u ? u.replace(/\/[^/]+$/, '/' + size + 'bb.jpg') : '';
@@ -340,6 +344,18 @@ async function fetchDetails(s) {
     } else if (kind === 'm:') {
       const a = (await (await fetch('https://api.jikan.moe/v4/anime/' + id)).json()).data;
       d = { syn: (a.synopsis || '').replace(/\[Written by.*$/s, '').trim(), img: a.images && a.images.jpg && (a.images.jpg.large_image_url || a.images.jpg.image_url), genres: (a.genres || []).map(g => g.name).join(', '), score: a.score ? a.score + '/10' : '', extra: [a.type, a.episodes ? a.episodes + ' épisodes' : '', a.studios && a.studios[0] && a.studios[0].name].filter(Boolean).join(' · ') };
+    } else if (kind === 'a:') {
+      const j = await anilist('query($id:Int){Media(id:$id,type:ANIME){description(asHtml:false) coverImage{extraLarge} genres episodes averageScore format studios(isMain:true){nodes{name}}}}', { id: +id });
+      const a = j.data.Media;
+      d = { syn: stripHtml(a.description), img: a.coverImage && a.coverImage.extraLarge, genres: (a.genres || []).join(', '), score: a.averageScore ? (a.averageScore / 10).toFixed(1).replace('.', ',') + '/10' : '', extra: [a.format, a.episodes ? a.episodes + ' épisodes' : '', a.studios && a.studios.nodes[0] && a.studios.nodes[0].name].filter(Boolean).join(' · ') };
+    } else if (kind === 'd:') {
+      const w = await wikidataMovie(id);
+      let syn = '';
+      for (const [lang, url] of [['fr', w && w.fr], ['en', w && w.en]]) {
+        if (syn || !url) continue;
+        try { const j = await (await fetch('https://' + lang + '.wikipedia.org/api/rest_v1/page/summary/' + url.split('/').pop())).json(); syn = j.extract || ''; } catch (e) {}
+      }
+      d = { syn, img: '', genres: w ? w.genres.slice(0, 4).join(', ') : '', score: '', extra: '' };
     } else if (kind === 'i:') {
       let r = null;
       for (const c of [settings.country || 'us', 'us']) { const j = await (await fetch('https://itunes.apple.com/lookup?id=' + id + '&country=' + c)).json(); if (j.results && j.results[0]) { r = j.results[0]; break; } }
@@ -349,15 +365,55 @@ async function fetchDetails(s) {
   if (d) detailsCache[s] = d;
   return d;
 }
+// AniList (animés) : API GraphQL
+async function anilist(query, variables) {
+  const r = await fetch('https://graphql.anilist.co', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ query, variables }) });
+  if (!r.ok) throw new Error('AniList ' + r.status);
+  return r.json();
+}
+// Wikidata : durée, genres et pages Wikipédia d'un film à partir de son numéro IMDb
+async function wikidataMovie(imdbId) {
+  const q = `SELECT ?dur ?genreLabel ?fr ?en WHERE { ?f wdt:P345 "${imdbId}". OPTIONAL { ?f wdt:P2047 ?dur } OPTIONAL { ?f wdt:P136 ?genre. ?genre rdfs:label ?genreLabel FILTER(LANG(?genreLabel)="en") } OPTIONAL { ?fr schema:about ?f; schema:isPartOf <https://fr.wikipedia.org/> } OPTIONAL { ?en schema:about ?f; schema:isPartOf <https://en.wikipedia.org/> } }`;
+  const j = await (await fetch('https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(q))).json();
+  const b = j.results.bindings; if (!b.length) return null;
+  const val = k => { const x = b.find(r => r[k]); return x ? x[k].value : ''; };
+  return { d: Math.round(+val('dur') || 0), genres: [...new Set(b.map(r => r.genreLabel && r.genreLabel.value).filter(Boolean))], fr: val('fr'), en: val('en') };
+}
+// Complète un film IMDb (genres + durée) depuis Wikidata
+async function enrichMovie(it) {
+  if (!it.s || !it.s.startsWith('d:') || (it.g && it.d)) return false;
+  try {
+    const w = await wikidataMovie(it.s.slice(2)); if (!w) return false;
+    if (!it.g) { const g = mapGenres(w.genres); if (g) it.g = g; }
+    if (!it.d && w.d > 0 && w.d < 1000) it.d = w.d;
+    return true;
+  } catch (e) { return false; }
+}
 function stripHtml(h) { const el = document.createElement('div'); el.innerHTML = h || ''; return el.textContent.trim(); }
 function parseJikanDur(s) { let t = 0, m; if ((m = /(\d+)\s*hr/i.exec(s || ''))) t += +m[1] * 60; if ((m = /(\d+)\s*min/i.exec(s || ''))) t += +m[1]; return t; }
 
 /* =================== Recherche =================== */
+// Films : IMDb (via la Roku, car IMDb refuse les appels directs d'une page web), iTunes en secours
+async function imdbSearch(q) {
+  const u = 'https://v3.sg.media-imdb.com/suggestion/titles/x/' + encodeURIComponent(q.toLowerCase()) + '.json';
+  const r = await fetch('/api/fetch?u=' + encodeURIComponent(u));
+  if (!r.ok) throw new Error('IMDb ' + r.status);
+  const d = await r.json();
+  return (d.d || []).filter(x => x.id && x.id.startsWith('tt') && (x.qid === 'movie' || x.qid === 'tvMovie')).map(x => {
+    const p = compactImg(x.i && x.i.imageUrl);
+    return { t: x.l, y: x.y ? String(x.y) : '', s: 'd:' + x.id, p, img: p ? imgUrl(p) : '', g: '', d: 0, syn: '', cast: x.s || '' };
+  });
+}
+async function jikanSearch(q) {
+  const d = await (await fetch('https://api.jikan.moe/v4/anime?sfw=true&limit=24&q=' + encodeURIComponent(q))).json();
+  return d.data.map(a => { const img = a.images && a.images.jpg && a.images.jpg.image_url; return { t: a.title_english || a.title, alt: a.title_english && a.title !== a.title_english ? a.title : '', y: String(a.year || (a.aired && a.aired.from || '').slice(0, 4) || ''), s: 'm:' + a.mal_id, p: compactImg(img), img, g: mapGenres([...(a.genres || []), ...(a.themes || [])].map(g => g.name)), d: parseJikanDur(a.duration), syn: (a.synopsis || '').replace(/\[Written by.*$/s, '').trim() }; });
+}
 const SOURCES = {
   movie: { label: 'Nom du film…', async search(q) {
+    try { const r = await imdbSearch(q); if (r.length) return r; } catch (e) {}
     const d = await (await fetch('https://itunes.apple.com/search?media=movie&entity=movie&limit=30&country=' + (settings.country || 'us') + '&term=' + encodeURIComponent(q))).json();
     const seen = new Set();
-    return d.results.map(x => ({ t: x.trackName, y: (x.releaseDate || '').slice(0, 4), s: 'i:' + x.trackId, img: itunesArt(x.artworkUrl100, '200x300'), g: mapGenres((x.primaryGenreName || '').split(/\s*&\s*/)), d: x.trackTimeMillis ? Math.round(x.trackTimeMillis / 60000) : 0, syn: x.longDescription || '' }))
+    return d.results.map(x => ({ t: x.trackName, y: (x.releaseDate || '').slice(0, 4), s: 'i:' + x.trackId, p: compactImg(x.artworkUrl100), img: itunesArt(x.artworkUrl100, '200x300'), g: mapGenres((x.primaryGenreName || '').split(/\s*&\s*/)), d: x.trackTimeMillis ? Math.round(x.trackTimeMillis / 60000) : 0, syn: x.longDescription || '' }))
       .filter(x => { const k = x.t + x.y; if (seen.has(k)) return false; seen.add(k); return true; });
   }},
   tv: { label: 'Nom de la série…', async search(q) {
@@ -365,8 +421,13 @@ const SOURCES = {
     return d.map(({ show: s }) => ({ t: s.name, y: (s.premiered || '').slice(0, 4), s: 't:' + s.id, p: compactImg(s.image && (s.image.original || s.image.medium)), img: s.image && s.image.medium, g: mapGenres(s.genres), d: s.runtime || s.averageRuntime || 0, syn: stripHtml(s.summary) }));
   }},
   anime: { label: 'Nom de l\'animé…', async search(q) {
-    const d = await (await fetch('https://api.jikan.moe/v4/anime?sfw=true&limit=24&q=' + encodeURIComponent(q))).json();
-    return d.data.map(a => { const img = a.images && a.images.jpg && a.images.jpg.image_url; return { t: a.title_english || a.title, alt: a.title_english && a.title !== a.title_english ? a.title : '', y: String(a.year || (a.aired && a.aired.from || '').slice(0, 4) || ''), s: 'm:' + a.mal_id, p: compactImg(img), img, g: mapGenres([...(a.genres || []), ...(a.themes || [])].map(g => g.name)), d: parseJikanDur(a.duration), syn: (a.synopsis || '').replace(/\[Written by.*$/s, '').trim() }; });
+    try {
+      const j = await anilist('query($q:String){Page(perPage:20){media(search:$q,type:ANIME,isAdult:false){id title{romaji english} seasonYear startDate{year} coverImage{extraLarge large} genres duration description(asHtml:false)}}}', { q });
+      return j.data.Page.media.map(a => {
+        const big = a.coverImage && (a.coverImage.extraLarge || a.coverImage.large);
+        return { t: a.title.english || a.title.romaji, alt: a.title.english && a.title.romaji !== a.title.english ? a.title.romaji : '', y: String(a.seasonYear || (a.startDate && a.startDate.year) || ''), s: 'a:' + a.id, p: compactImg(big), img: a.coverImage && (a.coverImage.large || big), g: mapGenres(a.genres), d: a.duration || 0, syn: stripHtml(a.description) };
+      });
+    } catch (e) { return jikanSearch(q); } // MyAnimeList en secours
   }},
 };
 const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
@@ -424,6 +485,7 @@ function addResult(r, ci, opts = {}) {
   target.i.push(it);
   saveData('« ' + r.t + ' » ajouté à ' + target.n);
   renderAll();
+  enrichMovie(it).then(ok => { if (ok) { saveData(); renderAll(); } });
 }
 function renderResults() {
   const ci = +$('#target').value;
@@ -432,7 +494,7 @@ function renderResults() {
     const has = findIn(ci, r) >= 0;
     const el = document.createElement('div'); el.className = 'res';
     el.innerHTML = (r.img ? `<img class="poster" loading="lazy" src="${esc(r.img)}" alt="">` : '<div class="ph">?</div>') +
-      `<div class="info"><div class="t">${esc(r.t)}</div>${r.alt ? `<div class="meta">${esc(r.alt)}</div>` : ''}<div class="meta">${esc(metaLine(r))}</div>
+      `<div class="info"><div class="t">${esc(r.t)}</div>${r.alt ? `<div class="meta">${esc(r.alt)}</div>` : ''}<div class="meta">${esc(metaLine(r))}</div>${r.cast ? `<div class="meta">${esc(r.cast)}</div>` : ''}
        <button class="${has ? 'added' : 'primary'}" ${has ? 'disabled' : ''}>${has ? '✓ Dans la liste' : '+ Ajouter'}</button></div>`;
     el.querySelector('button').onclick = () => addResult(r, +$('#target').value);
     el.firstElementChild.onclick = () => openResultDialog(r);
@@ -631,9 +693,10 @@ $('#findPosters').onclick = async () => {
       i++; setStatus('Recherche des affiches… ' + i + ' / ' + list.length);
       try {
         const r = bestMatch(await SOURCES[catType(c)].search(searchTitle(it.t)), it);
-        if (r) { applyMatch(it, r); found++; }
+        if (r) { applyMatch(it, r); found++; await enrichMovie(it); }
       } catch (e) {}
-      await sleep(catType(c) === 'anime' ? 450 : 250); // l'API des animés limite à 3 requêtes/seconde
+      // Chaque site limite le nombre de recherches : on y va doucement
+      await sleep({ movie: 300, tv: 600, anime: 800 }[catType(c)]);
     }
   } finally { pending--; btn.disabled = false; }
   saveData(found + ' affiche(s) trouvée(s) sur ' + list.length);
@@ -661,8 +724,8 @@ function openPosterPicker(ci, ii) {
     res.forEach(r => {
       const el = document.createElement('div'); el.className = 'res'; el.style.cursor = 'pointer';
       el.innerHTML = (r.img ? `<img class="poster" loading="lazy" src="${esc(r.img)}" alt="">` : '<div class="ph">?</div>') +
-        `<div class="info"><div class="t">${esc(r.t)}</div><div class="meta">${esc(metaLine(r))}</div></div>`;
-      el.onclick = () => { applyMatch(it, r); delete detailsCache[it.s]; saveData('Affiche de « ' + it.t + ' » mise à jour'); renderAll(); openItemDialog(ci, ii); };
+        `<div class="info"><div class="t">${esc(r.t)}</div><div class="meta">${esc(metaLine(r))}</div>${r.cast ? `<div class="meta">${esc(r.cast)}</div>` : ''}</div>`;
+      el.onclick = async () => { applyMatch(it, r); delete detailsCache[it.s]; await enrichMovie(it); saveData('Affiche de « ' + it.t + ' » mise à jour'); renderAll(); openItemDialog(ci, ii); };
       $('#pkres').appendChild(el);
     });
   };

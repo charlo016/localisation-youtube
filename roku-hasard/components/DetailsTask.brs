@@ -104,10 +104,87 @@ sub fetchDetails()
             if IsStr(r.artistName) then extra.Push("de " + r.artistName)
             res.extra = joinStrings(extra)
         end if
+    else if kind = "a:" then
+        ' AniList (animés)
+        q = "query($id:Int){Media(id:$id,type:ANIME){description(asHtml:false) coverImage{extraLarge} genres episodes duration averageScore format studios(isMain:true){nodes{name}}}}"
+        body = FormatJson({ query: q, variables: { id: id.ToInt() } })
+        j = postJson("https://graphql.anilist.co", body)
+        if type(j) = "roAssociativeArray" and type(j.data) = "roAssociativeArray" and type(j.data.Media) = "roAssociativeArray" then
+            a = j.data.Media
+            res.ok = true
+            res.synopsis = cleanText(AnyToStr(a.description))
+            if type(a.coverImage) = "roAssociativeArray" then res.poster = AnyToStr(a.coverImage.extraLarge)
+            res.genres = joinStrings(a.genres)
+            res.runtime = ToInt(a.duration)
+            sc = ToInt(a.averageScore)
+            if sc > 0 then res.score = formatScore(sc / 10.0, 10)
+            extra = []
+            if IsStr(a.format) then extra.Push(a.format)
+            eps = ToInt(a.episodes)
+            if eps = 1 then
+                extra.Push("1 épisode")
+            else if eps > 1 then
+                extra.Push(eps.ToStr() + " épisodes")
+            end if
+            if type(a.studios) = "roAssociativeArray" and type(a.studios.nodes) = "roArray" and a.studios.nodes.Count() > 0 then
+                if type(a.studios.nodes[0]) = "roAssociativeArray" then extra.Push(AnyToStr(a.studios.nodes[0].name))
+            end if
+            res.extra = joinStrings(extra)
+        end if
+
+    else if kind = "d:" then
+        ' Film IMDb : durée + pages Wikipédia via Wikidata, puis résumé Wikipédia (français d'abord)
+        sparql = "SELECT ?dur ?fr ?en WHERE { ?f wdt:P345 " + Chr(34) + id + Chr(34) + ". OPTIONAL { ?f wdt:P2047 ?dur } OPTIONAL { ?fr schema:about ?f; schema:isPartOf <https://fr.wikipedia.org/> } OPTIONAL { ?en schema:about ?f; schema:isPartOf <https://en.wikipedia.org/> } } LIMIT 1"
+        ut = CreateObject("roUrlTransfer")
+        j = getJson("https://query.wikidata.org/sparql?format=json&query=" + ut.Escape(sparql))
+        frUrl = ""
+        enUrl = ""
+        if type(j) = "roAssociativeArray" and type(j.results) = "roAssociativeArray" and type(j.results.bindings) = "roArray" and j.results.bindings.Count() > 0 then
+            b = j.results.bindings[0]
+            if type(b.dur) = "roAssociativeArray" then res.runtime = ToInt(b.dur.value)
+            if type(b.fr) = "roAssociativeArray" then frUrl = AnyToStr(b.fr.value)
+            if type(b.en) = "roAssociativeArray" then enUrl = AnyToStr(b.en.value)
+            res.ok = true
+        end if
+        syn = ""
+        if frUrl <> "" then syn = wikiSummary("https://fr.wikipedia.org/api/rest_v1/page/summary/", frUrl)
+        if syn = "" and enUrl <> "" then syn = wikiSummary("https://en.wikipedia.org/api/rest_v1/page/summary/", enUrl)
+        if syn <> "" then
+            res.ok = true
+            res.synopsis = syn
+        end if
     end if
 
     m.top.result = res
 end sub
+
+' Résumé Wikipédia d'une page (url = https://xx.wikipedia.org/wiki/Titre)
+function wikiSummary(api as String, pageUrl as String) as String
+    slash = lastSlash(pageUrl)
+    if slash = 0 then return ""
+    j = getJson(api + Mid(pageUrl, slash + 1))
+    if type(j) = "roAssociativeArray" then return cleanText(AnyToStr(j.extract))
+    return ""
+end function
+
+function postJson(url as String, body as String) as Dynamic
+    ut = CreateObject("roUrlTransfer")
+    ut.SetUrl(url)
+    ut.SetCertificatesFile("common:/certs/ca-bundle.crt")
+    ut.InitClientCertificates()
+    ut.AddHeader("Content-Type", "application/json")
+    ut.AddHeader("Accept", "application/json")
+    port = CreateObject("roMessagePort")
+    ut.SetMessagePort(port)
+    if not ut.AsyncPostFromString(body) then return invalid
+    msg = wait(10000, port)
+    if type(msg) <> "roUrlEvent" then
+        ut.AsyncCancel()
+        return invalid
+    end if
+    if msg.GetResponseCode() <> 200 then return invalid
+    return ParseJson(msg.GetString())
+end function
 
 function itunesLookup(id as String, country as String) as Dynamic
     j = getJson("https://itunes.apple.com/lookup?id=" + id + "&country=" + country)

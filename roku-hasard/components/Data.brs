@@ -229,6 +229,8 @@ function PosterUrl(p as Dynamic) as String
     pre = Left(p, 2)
     rest = Mid(p, 3)
     if pre = "m:" then return "https://cdn.myanimelist.net/images/anime/" + rest + "l.jpg"
+    if pre = "a:" then return "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/" + rest
+    if pre = "b:" then return "https://m.media-amazon.com/images/M/" + rest + "._V1_SX400.jpg"
     if pre = "t:" then return "https://static.tvmaze.com/uploads/images/original_untouched/" + rest
     if pre = "i:" then
         slash = Instr(1, rest, "/")

@@ -85,8 +85,12 @@ function processConn(c as Object) as Boolean
         first = lines[0].Trim().Split(" ")
         c.method = UCase(first[0])
         if first.Count() > 1 then c.path = first[1] else c.path = "/"
+        c.query = ""
         q = Instr(1, c.path, "?")
-        if q > 0 then c.path = Left(c.path, q - 1)
+        if q > 0 then
+            c.query = Mid(c.path, q + 1)
+            c.path = Left(c.path, q - 1)
+        end if
         for each l in lines
             idx = Instr(1, l, ":")
             if idx > 0 and LCase(Left(l, idx - 1).Trim()) = "content-length" then
@@ -102,11 +106,11 @@ function processConn(c as Object) as Boolean
     bodyStart = c.headerEnd + 4
     if c.buf.Count() - bodyStart < c.clen then return false
 
-    handleRequest(c.sock, c.method, c.path, bytesToStr(c.buf, bodyStart, c.clen))
+    handleRequest(c.sock, c.method, c.path, c.query, bytesToStr(c.buf, bodyStart, c.clen))
     return true
 end function
 
-sub handleRequest(sock as Object, method as String, path as String, body as String)
+sub handleRequest(sock as Object, method as String, path as String, query as String, body as String)
     if method = "GET" and (path = "/" or path = "/index.html") then
         sendBytes(sock, "200 OK", "text/html; charset=utf-8", m.html)
 
@@ -118,6 +122,28 @@ sub handleRequest(sock as Object, method as String, path as String, body as Stri
             info: { version: AppVersion(), max: MaxDataBytes(), url: m.top.url }
         }
         sendJson(sock, "200 OK", state)
+
+    else if method = "GET" and path = "/api/fetch" then
+        ' Relais pour les sites qui refusent les appels directs depuis une page web
+        ' (IMDb) ou qui limitent fortement (iTunes). Seuls ces sites sont autorisés.
+        url = ""
+        for each part in query.Split("&")
+            if Left(part, 2) = "u=" then url = CreateObject("roUrlTransfer").Unescape(Mid(part, 3))
+        end for
+        allowed = false
+        for each prefix in ["https://v3.sg.media-imdb.com/", "https://itunes.apple.com/"]
+            if Left(url, Len(prefix)) = prefix then allowed = true
+        end for
+        if not allowed then
+            sendJson(sock, "403 Forbidden", { error: "Site non autorisé" })
+            return
+        end if
+        res = proxyGet(url)
+        if res.code = 200 then
+            sendText(sock, "200 OK", "application/json; charset=utf-8", res.body)
+        else
+            sendJson(sock, "502 Bad Gateway", { error: "Erreur " + res.code.ToStr() })
+        end if
 
     else if method = "GET" and path = "/api/data" then
         sendJson(sock, "200 OK", LoadData())
@@ -164,6 +190,24 @@ sub handleRequest(sock as Object, method as String, path as String, body as Stri
         sendText(sock, "404 Not Found", "text/plain; charset=utf-8", "Introuvable")
     end if
 end sub
+
+function proxyGet(url as String) as Object
+    ut = CreateObject("roUrlTransfer")
+    ut.SetUrl(url)
+    ut.SetCertificatesFile("common:/certs/ca-bundle.crt")
+    ut.InitClientCertificates()
+    ut.EnableEncodings(true)
+    ut.RetainBodyOnError(true)
+    port = CreateObject("roMessagePort")
+    ut.SetMessagePort(port)
+    if not ut.AsyncGetToString() then return { code: 0, body: "" }
+    msg = wait(10000, port)
+    if type(msg) <> "roUrlEvent" then
+        ut.AsyncCancel()
+        return { code: 0, body: "" }
+    end if
+    return { code: msg.GetResponseCode(), body: msg.GetString() }
+end function
 
 function findHeaderEnd(ba as Object) as Integer
     n = ba.Count()

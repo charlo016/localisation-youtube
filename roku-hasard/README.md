@@ -53,7 +53,8 @@ Tout s'enregistre automatiquement et la télé se met à jour tout de suite (et 
 - **🔍 Rechercher** : Film / Série / Animé, tape un nom, **+ Ajouter**. L'affiche,
   l'année, les genres et la durée sont ajoutés automatiquement. Clique sur une affiche
   pour lire le résumé (et « Ajouter comme déjà vu »). Doublons détectés.
-  Sources sans compte ni clé : iTunes (films), TVmaze (séries), MyAnimeList via Jikan (animés).
+  Sources sans compte ni clé : IMDb + Wikidata/Wikipédia (films ; IMDb passe par la Roku),
+  TVmaze (séries), AniList (animés). En secours : iTunes (films) et MyAnimeList/Jikan (animés).
 - **📋 Mes listes** : recherche, filtres (à voir / vus / favoris / genre), tri ;
   étoiles, ♥ favori, case « Vu », retirer ; clic sur un titre → fiche avec résumé,
   **Afficher sur la télé**, déplacer vers une autre catégorie.
@@ -77,12 +78,10 @@ Tout s'enregistre automatiquement et la télé se met à jour tout de suite (et 
 ## Limites à connaître
 
 - La page web ne marche **que pendant que l'app est ouverte** sur la télé.
-- La mémoire d'une app Roku est petite (~16 Ko pour tout) : environ **150 à 200 titres**.
-  La page affiche le pourcentage utilisé. Les films ne gardent que leur numéro iTunes
-  (l'affiche est retrouvée à l'affichage) pour économiser de la place.
-- Les résumés viennent des bases publiques : souvent **en anglais**. Pour les films,
-  choisis la boutique iTunes « France » dans les paramètres pour avoir des titres
-  et résumés en français.
+- La mémoire d'une app Roku est petite (~16 Ko pour tout) : environ **120 titres avec
+  affiches** (une liste de 79 titres utilise ~60 %). La page affiche le pourcentage utilisé.
+- Les résumés de films viennent de Wikipédia **en français** (en anglais si l'article
+  français n'existe pas). Ceux des séries et animés sont en anglais.
 - La liste est effacée si l'app est désinstallée ou remplacée par une autre app de
   développement → **Exporter** de temps en temps.
 
@@ -118,4 +117,5 @@ page web sur le port 8888).
 | GET | `/api/state` | liste + réglages + historique + infos |
 | POST | `/api/data` | remplace la liste |
 | POST | `/api/settings` | met à jour des réglages (partiel accepté) |
+| GET | `/api/fetch?u=…` | relais vers IMDb / iTunes (seuls sites autorisés) |
 | POST | `/api/cmd` | `{action:"pick",k}`, `{action:"show",c,i}`, `{action:"players"}`, `{action:"clearHistory"}`, `{action:"addHistory",t,c}` |
