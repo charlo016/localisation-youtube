@@ -8,6 +8,11 @@
         <field id="settingsJson" type="string" alwaysNotify="true" />
         <field id="command" type="assocarray" alwaysNotify="true" />
         <field id="error" type="string" />
+        <!-- Diagnostic : état du serveur, port réellement utilisé, requêtes reçues -->
+        <field id="status" type="string" />
+        <field id="actualPort" type="integer" />
+        <field id="hits" type="integer" value="0" />
+        <field id="lastError" type="string" />
     </interface>
     <script type="text/brightscript" uri="pkg:/components/Data.brs" />
     <script type="text/brightscript" uri="pkg:/components/WebServerTask.brs" />

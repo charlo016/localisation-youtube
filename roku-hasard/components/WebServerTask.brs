@@ -11,22 +11,46 @@ sub init()
 end sub
 
 sub runServer()
-    port = CreateObject("roMessagePort")
-    addr = CreateObject("roSocketAddress")
-    addr.setPort(m.top.port)
-
-    server = CreateObject("roStreamSocket")
-    server.setMessagePort(port)
-    server.setAddress(addr)
-    server.notifyReadable(true)
-    server.listen(8)
-    if not server.eOK() then
-        m.top.error = "Impossible d'ouvrir le port " + m.top.port.ToStr()
-        return
-    end if
-
     m.html = CreateObject("roByteArray")
     m.html.ReadFile("pkg:/web/index.html")
+    m.top.status = "starting"
+    ' Si le serveur plante (requête bizarre, erreur réseau...), il redémarre tout seul
+    while true
+        try
+            serveLoop()
+        catch e
+            m.top.lastError = e.message
+        end try
+        m.top.status = "restarting"
+        sleep(1000)
+    end while
+end sub
+
+' Ouvre le port (8888, sinon un port de secours) et répond aux requêtes
+sub serveLoop()
+    port = CreateObject("roMessagePort")
+    server = invalid
+    for each p in [m.top.port, 8000, 9999, 8765]
+        addr = CreateObject("roSocketAddress")
+        addr.setPort(p)
+        s = CreateObject("roStreamSocket")
+        s.setMessagePort(port)
+        s.setAddress(addr)
+        s.notifyReadable(true)
+        s.listen(8)
+        if s.eOK() then
+            server = s
+            m.top.actualPort = p
+            exit for
+        end if
+        s.close()
+    end for
+    if server = invalid then
+        m.top.status = "noport"
+        sleep(5000)
+        return
+    end if
+    m.top.status = "ready"
     conns = {}
 
     while true
@@ -39,26 +63,32 @@ sub runServer()
                     if sock <> invalid then
                         sock.setMessagePort(port)
                         sock.notifyReadable(true)
-                        conns[sock.getID().ToStr()] = { sock: sock, buf: CreateObject("roByteArray"), headerEnd: -1, clen: 0, method: "", path: "" }
+                        conns[sock.getID().ToStr()] = { sock: sock, buf: CreateObject("roByteArray"), headerEnd: -1, clen: 0, method: "", path: "", query: "" }
                     end if
                 end if
             else
                 key = sid.ToStr()
                 c = conns[key]
                 if c <> invalid and c.sock.isReadable() then
-                    n = c.sock.getCountRcvBuf()
                     done = false
-                    if n <= 0 then
-                        done = true ' le client a fermé la connexion
-                    else
-                        tmp = CreateObject("roByteArray")
-                        tmp[n - 1] = 0
-                        got = c.sock.receive(tmp, 0, n)
-                        for i = 0 to got - 1
-                            c.buf.Push(tmp[i])
-                        end for
-                        done = processConn(c)
-                    end if
+                    try
+                        n = c.sock.getCountRcvBuf()
+                        if n <= 0 then
+                            done = true ' le client a fermé la connexion
+                        else
+                            tmp = CreateObject("roByteArray")
+                            tmp[n - 1] = 0
+                            got = c.sock.receive(tmp, 0, n)
+                            for i = 0 to got - 1
+                                c.buf.Push(tmp[i])
+                            end for
+                            done = processConn(c)
+                        end if
+                    catch e
+                        ' Une requête qui plante ne doit pas arrêter le serveur
+                        m.top.lastError = e.message
+                        done = true
+                    end try
                     if done then
                         c.sock.close()
                         conns.Delete(key)
@@ -111,6 +141,7 @@ function processConn(c as Object) as Boolean
 end function
 
 sub handleRequest(sock as Object, method as String, path as String, query as String, body as String)
+    m.top.hits = m.top.hits + 1
     if method = "GET" and (path = "/" or path = "/index.html") then
         sendBytes(sock, "200 OK", "text/html; charset=utf-8", m.html)
 

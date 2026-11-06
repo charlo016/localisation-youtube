@@ -62,8 +62,10 @@ sub init()
 
     ' Serveur web pour éditer la liste depuis un téléphone / PC
     m.port = 8888
-    m.url = "http://" + getIp() + ":" + m.port.ToStr()
-    m.footer.text = "Modifier la liste : " + m.url
+    m.ip = getIp()
+    m.url = "http://" + m.ip + ":" + m.port.ToStr()
+    m.serverState = "starting"
+    updateFooter()
     m.server = m.top.findNode("server")
     m.server.port = m.port
     m.server.url = m.url
@@ -71,6 +73,9 @@ sub init()
     m.server.observeField("settingsJson", "onSettingsUpdated")
     m.server.observeField("command", "onCommand")
     m.server.observeField("error", "onServerError")
+    m.server.observeField("status", "onServerStatus")
+    m.server.observeField("actualPort", "onServerPort")
+    m.server.observeField("hits", "onServerStatus")
     m.server.control = "RUN"
 
     applyTheme()
@@ -180,6 +185,39 @@ end sub
 
 sub onServerError()
     m.footer.text = m.server.error
+end sub
+
+' Le bas de l'écran montre l'adresse ET l'état du serveur, pour savoir d'où vient un problème
+sub onServerPort()
+    p = m.server.actualPort
+    if p > 0 and p <> m.port then
+        m.port = p
+        m.url = "http://" + m.ip + ":" + p.ToStr()
+        m.server.url = m.url
+    end if
+    updateFooter()
+end sub
+
+sub onServerStatus()
+    m.serverState = m.server.status
+    updateFooter()
+end sub
+
+sub updateFooter()
+    st = m.serverState
+    if st = "ready" then
+        info = "page prête"
+        hits = 0
+        if m.server <> invalid then hits = m.server.hits
+        if hits > 0 then info = info + ", " + hits.ToStr() + " requête(s) reçue(s)"
+    else if st = "noport" then
+        info = "ERREUR : aucun port disponible"
+    else if st = "restarting" then
+        info = "redémarrage du serveur..."
+    else
+        info = "démarrage..."
+    end if
+    m.footer.text = "Modifier la liste : " + m.url + "   (" + info + ")"
 end sub
 
 ' Commandes envoyées depuis la page web
